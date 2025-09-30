@@ -64,6 +64,13 @@ Requisitos: PHP 8.2+, Composer, SQLite (por defecto) u otro driver soportado por
 
 1) Clonar e instalar dependencias
 ```bash
+# HTTPS
+git clone https://github.com/fer-gc05/HealthSync-API.git
+
+# SSH
+git clone git@github.com:fer-gc05/HealthSync-API.git
+
+cd HealthSync-API
 composer install
 ```
 
@@ -138,6 +145,11 @@ Ejemplos
 Si usas `gitmoji-cli`, puedes iniciar con: `gitmoji -c`
 
 ---
+
+## Contribución
+- Las tareas para los otros backends se asignarán mediante Issues en el repositorio.
+- Todos los cambios deben enviarse como Pull Requests apuntando a la rama `develop`.
+- Evita commits directos a `main`. Usa la convención de commits indicada arriba.
 
 ## Enlaces de referencia
 - Scramble – Laravel OpenAPI (Swagger) Documentation Generator: [`https://scramble.dedoc.co/`](https://scramble.dedoc.co/)
