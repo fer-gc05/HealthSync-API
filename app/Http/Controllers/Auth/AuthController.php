@@ -21,8 +21,13 @@ class AuthController extends Controller
     public function register(RegisterRequest $request)
     {
         try {
-            $this->user->create($request->validated());
-            $token = JWTAuth::fromUser($this->user);
+            $user = $this->user->create($request->validated());
+
+            // Assign role based on request input
+            $requestedRole = $request->validated('role');
+            $user->assignRole($requestedRole);
+
+            $token = JWTAuth::fromUser($user);
 
             return response()->json([
                 'success' => true,
@@ -33,6 +38,7 @@ class AuthController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'User registration failed',
+                'error' => $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
