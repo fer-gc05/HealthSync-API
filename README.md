@@ -23,11 +23,13 @@ Problema actual: muchos sistemas son fragmentados, duplican datos y generan erro
 
 ## Estado actual del proyecto
 - Autenticación básica de API implementada con JWT (login, registro, sesión, refresh)
+- **✅ Sistema de roles y permisos implementado con Spatie Permission**
+- **✅ Middlewares de autorización configurados**
 - Documentación OpenAPI generada automáticamente con Scramble
 - Rutas públicas de estado y enlaces a documentación en `routes/web.php`
 
 Próximos pasos
-- Control de roles y permisos con Spatie (a integrar)
+- ~~Control de roles y permisos con Spatie (a integrar)~~ ✅ **COMPLETADO**
 - Tiempo real y websockets con Reverb (a integrar)
 - Módulos clínicos (EHR/FHIR), teleconsulta y recordatorios
 
@@ -36,11 +38,17 @@ Próximos pasos
 ## Endpoints API actuales
 Archivo `routes/api.php`:
 
-- POST `/api/auth/register` – registro
+**Autenticación:**
+- POST `/api/auth/register` – registro (requiere campo `role`: "patient" o "doctor")
 - POST `/api/auth/login` – login
 - GET `/api/auth/me` – perfil (protegido `auth:api` con JWT)
 - POST `/api/auth/logout` – cerrar sesión (protegido)
 - POST `/api/auth/refresh` – refrescar token (protegido)
+
+**Administración (solo admin):**
+- GET `/api/admin/users` – listar usuarios con roles
+- GET `/api/admin/users/role/{role}` – usuarios por rol específico
+- PUT `/api/admin/users/{user}/role` – asignar rol a usuario
 
 Archivo `routes/web.php` expone metadata y enlaces útiles:
 - `GET /` → JSON con nombre del proyecto, versión de Laravel y enlaces:
@@ -49,13 +57,56 @@ Archivo `routes/web.php` expone metadata y enlaces útiles:
 
 ---
 
+## Sistema de Roles y Permisos
+
+### Roles disponibles:
+- **admin**: Gestión completa del sistema
+- **doctor**: Acceso a pacientes y gestión de citas  
+- **patient**: Acceso limitado a datos propios
+
+### Permisos por rol:
+- **Admin**: `manage-users`, `manage-doctors`, `manage-patients`, `view-reports`, `manage-system`
+- **Doctor**: `view-patients`, `create-appointments`, `update-appointments`, `view-medical-records`
+- **Patient**: `view-own-profile`, `create-appointments`, `view-own-appointments`, `view-own-medical-records`
+
+### Asignación de roles:
+1. **Registro público**: Campo `role` obligatorio ("patient" o "doctor")
+2. **Gestión admin**: Endpoint `PUT /api/admin/users/{user}/role`
+
+### Usuarios de prueba:
+- Por el momento no hay usuarios predefinidos. Crear mediante registro o Tinker.
+
+### Ejemplos:
+```bash
+# Registro como doctor
+POST /api/auth/register
+{
+  "name": "Dr. García",
+  "email": "garcia@hospital.com", 
+  "password": "segura123",
+  "password_confirmation": "segura123",
+  "role": "doctor"
+}
+
+# Admin cambia rol de usuario
+PUT /api/admin/users/5/role
+Authorization: Bearer {admin_token}
+{
+  "role": "admin"
+}
+```
+
+---
+
 ## Paquetes en uso
 - Tymon JWT Auth: autenticación JWT para APIs
   - Documentación: [`https://jwt-auth.readthedocs.io/en/develop/laravel-installation/`](https://jwt-auth.readthedocs.io/en/develop/laravel-installation/)
 - Dedoc Scramble: generación automática de documentación OpenAPI (Swagger) para Laravel
   - Documentación: [`https://scramble.dedoc.co/`](https://scramble.dedoc.co/)
+- Spatie Permission: gestión de roles y permisos
+  - Documentación: [`https://spatie.be/docs/laravel-permission/v5/introduction`](https://spatie.be/docs/laravel-permission/v5/introduction)
 
-Nota: Más adelante se integrará Spatie Permissions para roles y permisos, y Reverb para websockets/tiempo real.
+Nota: Más adelante se integrará Reverb para websockets/tiempo real.
 
 ---
 
@@ -85,15 +136,28 @@ php artisan key:generate
 php artisan migrate
 ```
 
-4) JWT Auth: generar secreto (la configuración ya está publicada)
+4) Seeders: crear roles y permisos
+```bash
+php artisan db:seed --class=RolePermissionSeeder
+```
+
+5) Crear usuario administrador (Opcional)
+```bash
+php artisan tinker
+>>> $admin = App\Models\User::create(['name' => 'Admin', 'email' => 'admin@api.com', 'password' => Hash::make('HealthSync')]);
+>>> $admin->assignRole('admin');
+>>> exit
+```
+
+6) JWT Auth: generar secreto (la configuración ya está publicada)
 ```bash
 php artisan jwt:secret
 ```
 
-5) Scramble: documentación API
+7) Scramble: documentación API
 Por defecto, Scramble expone la UI y el JSON bajo `/docs/v1/api` y `/docs/v1/openapi.json`. Ajustes en `config/scramble.php`.
 
-6) Ejecutar en desarrollo
+8) Ejecutar en desarrollo
 ```bash
 php artisan serve
 ```
@@ -154,5 +218,6 @@ Si usas `gitmoji-cli`, puedes iniciar con: `gitmoji -c`
 ## Enlaces de referencia
 - Scramble – Laravel OpenAPI (Swagger) Documentation Generator: [`https://scramble.dedoc.co/`](https://scramble.dedoc.co/)
 - Tymon JWT Auth – Instalación en Laravel: [`https://jwt-auth.readthedocs.io/en/develop/laravel-installation/`](https://jwt-auth.readthedocs.io/en/develop/laravel-installation/)
+- Spatie Permission – Documentación en Laravel: [`https://spatie.be/docs/laravel-permission/v5/introduction`](https://spatie.be/docs/laravel-permission/v5/introduction)
 
 ---
