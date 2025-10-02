@@ -7,11 +7,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements JWTSubject
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -47,6 +48,9 @@ class User extends Authenticatable implements JWTSubject
         ];
     }
 
+    /**
+     * JWT Methods
+     */
     public function getJWTIdentifier()
     {
         return $this->getKey();
@@ -54,6 +58,37 @@ class User extends Authenticatable implements JWTSubject
 
     public function getJWTCustomClaims()
     {
-        return [];
+        return [
+            'role' => $this->getRoleNames()->first(),  // Solo el primer rol (singular)
+            'permissions' => $this->getPermissionsViaRoles()->pluck('name')->toArray()
+        ];
+    }
+
+    /**
+     * Helper methods for roles
+     */
+    public function isAdmin(): bool
+    {
+        return $this->hasRole('admin');
+    }
+
+    public function isDoctor(): bool
+    {
+        return $this->hasRole('doctor');
+    }
+
+    public function isPatient(): bool
+    {
+        return $this->hasRole('patient');
+    }
+
+    /**
+     * Scope para filtrar por rol
+     */
+    public function scopeWithRole($query, $role)
+    {
+        return $query->whereHas('roles', function ($q) use ($role) {
+            $q->where('name', $role);
+        });
     }
 }
