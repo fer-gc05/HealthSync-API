@@ -17,8 +17,16 @@ class DatabaseSeeder extends Seeder
         // First seed roles and permissions
         $this->call(RolePermissionSeeder::class);
 
-        // User::factory(10)->create();
+        // Seed specialties first (no dependencies)
+        $this->call(SpecialtySeeder::class);
 
+        // Seed medical staff (depends on specialties)
+        $this->call(MedicalStaffSeeder::class);
+
+        // Seed patients (no dependencies on other medical tables)
+        $this->call(PatientSeeder::class);
+
+        // Create a test admin user
         User::factory()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',
