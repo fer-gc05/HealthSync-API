@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Auth;
 
 use App\Http\Requests\BaseRequest;
+use Illuminate\Validation\Rule;
 
 class RegisterRequest extends BaseRequest
 {
@@ -17,6 +18,18 @@ class RegisterRequest extends BaseRequest
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users',
             'password' => 'required|string|min:8|confirmed',
+            'role' => ['required', 'string', Rule::in(['patient', 'doctor'])], // Solo permite patient/doctor por registro público
+        ];
+    }
+
+    /**
+     * Custom messages for validation errors
+     */
+    public function messages(): array
+    {
+        return [
+            'role.required' => 'Debe especificar el tipo de usuario (paciente o doctor)',
+            'role.in' => 'El rol debe ser paciente o doctor',
         ];
     }
 }
