@@ -22,12 +22,9 @@ class AuthController extends Controller
     {
         try {
             $user = $this->user->create($request->validated());
-
-            // Assign role based on request input
-            $requestedRole = $request->validated('role');
-            $user->assignRole($requestedRole);
-
             $token = JWTAuth::fromUser($user);
+
+            $user->assignRole('patient');
 
             return response()->json([
                 'success' => true,

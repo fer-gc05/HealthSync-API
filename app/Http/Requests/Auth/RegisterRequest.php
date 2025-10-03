@@ -18,7 +18,6 @@ class RegisterRequest extends BaseRequest
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            'role' => ['required', 'string', Rule::in(['patient', 'doctor'])], // Solo permite patient/doctor por registro público
         ];
     }
 

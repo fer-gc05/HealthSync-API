@@ -2,8 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 
@@ -14,9 +16,7 @@ class RolePermissionSeeder extends Seeder
      */
     public function run(): void
     {
-        // Reset cached roles and permissions
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
-
+        
         // Create roles
         $adminRole = Role::create(['name' => 'admin']);   // Admin
         $doctorRole = Role::create(['name' => 'doctor']); // Doctor
@@ -74,6 +74,6 @@ class RolePermissionSeeder extends Seeder
         ]);
 
 
-        $this->command->info('Roles and permissions seeded successfully!');
+        echo "Roles and permissions seeded successfully!";
     }
 }
