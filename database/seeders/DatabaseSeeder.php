@@ -26,6 +26,9 @@ class DatabaseSeeder extends Seeder
         // Seed patients (no dependencies on other medical tables)
         $this->call(PatientSeeder::class);
 
+        // Create admin users
+        $this->call(AdminUserSeeder::class);
+
         // Create a test admin user
         User::factory()->create([
             'name' => 'Test User',

@@ -9,12 +9,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
-// use Spatie\Permission\Traits\HasRoles;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements JWTSubject
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable; // HasRoles;
+    use HasFactory, Notifiable, HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -61,8 +61,8 @@ class User extends Authenticatable implements JWTSubject
     public function getJWTCustomClaims()
     {
         return [
-            // 'role' => $this->getRoleNames()->first(),  // Solo el primer rol (singular)
-            // 'permissions' => $this->getPermissionsViaRoles()->pluck('name')->toArray()
+            'role' => $this->getRoleNames()->first(),  // Solo el primer rol (singular)
+            'permissions' => $this->getPermissionsViaRoles()->pluck('name')->toArray()
         ];
     }
 
@@ -71,20 +71,17 @@ class User extends Authenticatable implements JWTSubject
      */
     public function isAdmin(): bool
     {
-        // return $this->hasRole('admin');
-        return false; // Temporary
+        return $this->hasRole('admin');
     }
 
     public function isDoctor(): bool
     {
-        // return $this->hasRole('doctor');
-        return false; // Temporary
+        return $this->hasRole('doctor');
     }
 
     public function isPatient(): bool
     {
-        // return $this->hasRole('patient');
-        return false; // Temporary
+        return $this->hasRole('patient');
     }
 
     /**
@@ -92,10 +89,9 @@ class User extends Authenticatable implements JWTSubject
      */
     public function scopeWithRole($query, $role)
     {
-        // return $query->whereHas('roles', function ($q) use ($role) {
-        //     $q->where('name', $role);
-        // });
-        return $query; // Temporary
+        return $query->whereHas('roles', function ($q) use ($role) {
+            $q->where('name', $role);
+        });
     }
 
     /**
