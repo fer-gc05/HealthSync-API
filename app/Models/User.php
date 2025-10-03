@@ -4,15 +4,17 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
-use Spatie\Permission\Traits\HasRoles;
+// use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements JWTSubject
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory, Notifiable; // HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -59,8 +61,8 @@ class User extends Authenticatable implements JWTSubject
     public function getJWTCustomClaims()
     {
         return [
-            'role' => $this->getRoleNames()->first(),  // Solo el primer rol (singular)
-            'permissions' => $this->getPermissionsViaRoles()->pluck('name')->toArray()
+            // 'role' => $this->getRoleNames()->first(),  // Solo el primer rol (singular)
+            // 'permissions' => $this->getPermissionsViaRoles()->pluck('name')->toArray()
         ];
     }
 
@@ -69,17 +71,20 @@ class User extends Authenticatable implements JWTSubject
      */
     public function isAdmin(): bool
     {
-        return $this->hasRole('admin');
+        // return $this->hasRole('admin');
+        return false; // Temporary
     }
 
     public function isDoctor(): bool
     {
-        return $this->hasRole('doctor');
+        // return $this->hasRole('doctor');
+        return false; // Temporary
     }
 
     public function isPatient(): bool
     {
-        return $this->hasRole('patient');
+        // return $this->hasRole('patient');
+        return false; // Temporary
     }
 
     /**
@@ -87,8 +92,54 @@ class User extends Authenticatable implements JWTSubject
      */
     public function scopeWithRole($query, $role)
     {
-        return $query->whereHas('roles', function ($q) use ($role) {
-            $q->where('name', $role);
-        });
+        // return $query->whereHas('roles', function ($q) use ($role) {
+        //     $q->where('name', $role);
+        // });
+        return $query; // Temporary
+    }
+
+    /**
+     * Relación 1:1 con Patient
+     * Un usuario puede ser un paciente
+     */
+    public function patient(): HasOne
+    {
+        return $this->hasOne(Patient::class);
+    }
+
+    /**
+     * Relación 1:1 con MedicalStaff
+     * Un usuario puede ser personal médico
+     */
+    public function medicalStaff(): HasOne
+    {
+        return $this->hasOne(MedicalStaff::class);
+    }
+
+    /**
+     * Relación 1:N con Notification
+     * Un usuario puede tener muchas notificaciones
+     */
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(Notification::class);
+    }
+
+    /**
+     * Relación 1:N con Message (como remitente)
+     * Un usuario puede enviar muchos mensajes
+     */
+    public function sentMessages(): HasMany
+    {
+        return $this->hasMany(Message::class, 'sender_id');
+    }
+
+    /**
+     * Relación 1:N con Message (como destinatario)
+     * Un usuario puede recibir muchos mensajes
+     */
+    public function receivedMessages(): HasMany
+    {
+        return $this->hasMany(Message::class, 'recipient_id');
     }
 }
