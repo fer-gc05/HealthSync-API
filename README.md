@@ -22,33 +22,95 @@ Problema actual: muchos sistemas son fragmentados, duplican datos y generan erro
 ---
 
 ## Estado actual del proyecto
-- Autenticación básica de API implementada con JWT (login, registro, sesión, refresh)
+- **✅ Autenticación completa de API implementada con JWT**
 - **✅ Sistema de roles y permisos implementado con Spatie Permission**
+- **✅ CRUD completo de usuarios para administradores**
+- **✅ Soft Deletes implementados en todos los modelos principales**
 - **✅ Middlewares de autorización configurados**
+- **✅ Gestión de perfiles de paciente y doctor**
+- **✅ Filtros y búsqueda avanzada de usuarios**
 - Documentación OpenAPI generada automáticamente con Scramble
 - Rutas públicas de estado y enlaces a documentación en `routes/web.php`
 
 Próximos pasos
-- ~~Control de roles y permisos con Spatie (a integrar)~~ ✅ **COMPLETADO**
+- ~~Control de roles y permisos con Spatie~~ ✅ **COMPLETADO**
+- ~~CRUD de usuarios y Soft Deletes~~ ✅ **COMPLETADO**
 - Tiempo real y websockets con Reverb (a integrar)
 - Módulos clínicos (EHR/FHIR), teleconsulta y recordatorios
 
 ---
 
-## Endpoints API actuales
-Archivo `routes/api.php`:
+## 🔐 API Endpoints Disponibles
 
-**Autenticación:**
-- POST `/api/auth/register` – registro (requiere campo `role`: "patient" o "doctor")
-- POST `/api/auth/login` – login
-- GET `/api/auth/me` – perfil (protegido `auth:api` con JWT)
-- POST `/api/auth/logout` – cerrar sesión (protegido)
-- POST `/api/auth/refresh` – refrescar token (protegido)
+### **Autenticación**
+```
+POST /api/auth/register          - Registro de usuario
+POST /api/auth/login             - Inicio de sesión
+GET  /api/auth/me                - Perfil del usuario autenticado
+POST /api/auth/refresh           - Renovar token
+POST /api/auth/logout            - Cerrar sesión
+```
 
-**Administración (solo admin):**
-- GET `/api/admin/users` – listar usuarios con roles
-- GET `/api/admin/users/role/{role}` – usuarios por rol específico
-- PUT `/api/admin/users/{user}/role` – asignar rol a usuario
+### **Gestión de Perfil (Usuarios Autenticados)**
+```
+PUT  /api/profile                - Actualizar perfil básico
+POST /api/profile/complete/patient - Completar perfil de paciente
+PUT  /api/profile/patient        - Actualizar datos de paciente
+```
+
+### **Administración (Solo Admin)**
+```
+# Gestión de usuarios y roles
+GET    /api/admin/users                    - Listar usuarios (con filtros y paginación)
+GET    /api/admin/users/role/{role}       - Usuarios por rol específico
+PUT    /api/admin/users/{user}/role        - Asignar rol a usuario
+
+# CRUD de usuarios
+GET    /api/admin/users/trashed           - Usuarios eliminados
+GET    /api/admin/users/{user}            - Ver usuario específico
+DELETE /api/admin/users/{user}            - Eliminar usuario (soft delete)
+POST   /api/admin/users/{user}/restore    - Restaurar usuario
+DELETE /api/admin/users/{user}/force      - Eliminar permanentemente
+
+# Crear usuarios por rol
+POST   /api/admin/users/admin             - Crear administrador
+POST   /api/admin/users/patient          - Crear paciente
+POST   /api/admin/users/doctor           - Crear doctor
+
+# Actualizar usuarios por rol
+PUT    /api/admin/users/{user}/admin     - Actualizar administrador
+PUT    /api/admin/users/{user}/patient   - Actualizar paciente
+PUT    /api/admin/users/{user}/doctor    - Actualizar doctor
+```
+
+> **Nota:** La ruta `GET /api/admin/users` está duplicada en el código (líneas 38 y 43) pero ambas apuntan a controladores diferentes. La primera usa `UserRoleController::users` y la segunda usa `UsersController::index`. Laravel usará la primera definición.
+
+## 🔍 Parámetros de Búsqueda
+
+### **Listar Usuarios**
+```
+GET /api/admin/users?q=nombre&role=patient&with_trashed=true&per_page=15&page=1
+```
+
+**Parámetros:**
+- `q` (string): Búsqueda por nombre o email
+- `role` (string): Filtro por rol (admin, doctor, patient)
+- `with_trashed` (boolean): Incluir usuarios eliminados
+- `only_trashed` (boolean): Solo usuarios eliminados
+- `per_page` (integer): Elementos por página (1-100)
+- `page` (integer): Número de página
+- `sort_by` (string): Campo de ordenamiento
+- `sort_dir` (string): Dirección (asc/desc)
+
+## 🔐 Autenticación
+
+Todos los endpoints requieren autenticación JWT:
+
+```bash
+curl -H "Authorization: Bearer {token}" \
+     -H "Content-Type: application/json" \
+     http://127.0.0.1:8000/api/endpoint
+```
 
 Archivo `routes/web.php` expone metadata y enlaces útiles:
 - `GET /` → JSON con nombre del proyecto, versión de Laravel y enlaces:
@@ -57,43 +119,200 @@ Archivo `routes/web.php` expone metadata y enlaces útiles:
 
 ---
 
-## Sistema de Roles y Permisos
+## 👥 Roles y Permisos
 
-### Roles disponibles:
+### **Roles disponibles:**
 - **admin**: Gestión completa del sistema
 - **doctor**: Acceso a pacientes y gestión de citas  
 - **patient**: Acceso limitado a datos propios
 
-### Permisos por rol:
+### **Permisos por rol:**
 - **Admin**: `manage-users`, `manage-doctors`, `manage-patients`, `view-reports`, `manage-system`
 - **Doctor**: `view-patients`, `create-appointments`, `update-appointments`, `view-medical-records`
 - **Patient**: `view-own-profile`, `create-appointments`, `view-own-appointments`, `view-own-medical-records`
 
-### Asignación de roles:
+### **Asignación de roles:**
 1. **Registro público**: Campo `role` obligatorio ("patient" o "doctor")
 2. **Gestión admin**: Endpoint `PUT /api/admin/users/{user}/role`
 
-### Usuarios de prueba:
-- Por el momento no hay usuarios predefinidos. Crear mediante registro o Tinker.
+## 🗑️ Soft Deletes
 
-### Ejemplos:
+El sistema implementa soft deletes para mantener la integridad de datos:
+
+- Los usuarios eliminados se marcan como `deleted_at`
+- Las relaciones se eliminan en cascada
+- Los usuarios pueden ser restaurados
+- Los administradores pueden ver usuarios eliminados
+- Eliminación permanente disponible para casos especiales
+
+## 📊 Respuestas de la API
+
+### **Éxito**
+```json
+{
+  "success": true,
+  "message": "Operation successful",
+  "data": { ... }
+}
+```
+
+### **Error**
+```json
+{
+  "success": false,
+  "message": "Error description",
+  "errors": { ... }
+}
+```
+
+### **Paginación**
+```json
+{
+  "success": true,
+  "data": {
+    "current_page": 1,
+    "data": [...],
+    "first_page_url": "...",
+    "from": 1,
+    "last_page": 5,
+    "last_page_url": "...",
+    "next_page_url": "...",
+    "path": "...",
+    "per_page": 15,
+    "prev_page_url": null,
+    "to": 15,
+    "total": 75
+  }
+}
+```
+
+### **Ejemplos de Respuestas Reales**
+
+**Login exitoso:**
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+}
+```
+
+**Registro exitoso:**
+```json
+{
+  "success": true,
+  "message": "User registered successfully",
+  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+}
+```
+
+**Error de validación:**
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": {
+    "email": ["The email has already been taken."],
+    "password": ["The password field must be at least 8 characters."]
+  }
+}
+```
+
+**Error de autorización:**
+```json
+{
+  "message": "User does not have the right roles.",
+  "exception": "Spatie\\Permission\\Exceptions\\UnauthorizedException"
+}
+```
+
+**Usuario creado exitosamente:**
+```json
+{
+  "success": true,
+  "message": "Patient created successfully",
+  "data": {
+    "id": 17,
+    "name": "New Patient",
+    "email": "new.patient@healthsync.com",
+    "patient": {
+      "id": 7,
+      "birth_date": "1985-05-15",
+      "gender": "female",
+      "phone": "+1234567890"
+    },
+    "roles": [{"name": "patient"}]
+  }
+}
+```
+
+## 🧪 Ejemplos de Uso
+
+### **Registro de Usuario**
 ```bash
-# Registro como doctor
-POST /api/auth/register
-{
-  "name": "Dr. García",
-  "email": "garcia@hospital.com", 
-  "password": "segura123",
-  "password_confirmation": "segura123",
-  "role": "doctor"
-}
+curl -X POST http://127.0.0.1:8000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Juan Pérez",
+    "email": "juan@example.com",
+    "password": "password123",
+    "password_confirmation": "password123"
+  }'
+```
 
-# Admin cambia rol de usuario
-PUT /api/admin/users/5/role
-Authorization: Bearer {admin_token}
-{
-  "role": "admin"
-}
+### **Crear Paciente (Admin)**
+```bash
+curl -X POST http://127.0.0.1:8000/api/admin/users/patient \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {admin_token}" \
+  -d '{
+    "name": "María García",
+    "email": "maria@example.com",
+    "password": "password123",
+    "password_confirmation": "password123",
+    "birth_date": "1990-01-01",
+    "gender": "female",
+    "phone": "+1234567890",
+    "address": "123 Main St",
+    "blood_type": "A+",
+    "allergies": "None",
+    "current_medications": "None",
+    "insurance_number": "INS123456",
+    "emergency_contact_name": "Emergency Contact",
+    "emergency_contact_phone": "+0987654321"
+  }'
+```
+
+### **Buscar Usuarios**
+```bash
+curl -X GET "http://127.0.0.1:8000/api/admin/users?q=maria&role=patient&per_page=10" \
+  -H "Authorization: Bearer {admin_token}"
+```
+
+### **Asignar Rol**
+```bash
+curl -X PUT http://127.0.0.1:8000/api/admin/users/15/role \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {admin_token}" \
+  -d '{"role": "doctor"}'
+```
+
+### **Ver Usuarios por Rol**
+```bash
+curl -X GET http://127.0.0.1:8000/api/admin/users/role/patient \
+  -H "Authorization: Bearer {admin_token}"
+```
+
+### **Ver Usuarios Eliminados**
+```bash
+curl -X GET http://127.0.0.1:8000/api/admin/users/trashed \
+  -H "Authorization: Bearer {admin_token}"
+```
+
+### **Restaurar Usuario**
+```bash
+curl -X POST http://127.0.0.1:8000/api/admin/users/15/restore \
+  -H "Authorization: Bearer {admin_token}"
 ```
 
 ---
@@ -136,30 +355,146 @@ php artisan key:generate
 php artisan migrate
 ```
 
-4) Seeders: crear roles y permisos
+4) Seeders: crear roles, permisos y datos de prueba
 ```bash
-php artisan db:seed --class=RolePermissionSeeder
+php artisan migrate:fresh --seed
 ```
 
-5) Crear usuario administrador (Opcional)
-```bash
-php artisan tinker
->>> $admin = App\Models\User::create(['name' => 'Admin', 'email' => 'admin@api.com', 'password' => Hash::make('HealthSync')]);
->>> $admin->assignRole('admin');
->>> exit
-```
+Esto ejecutará automáticamente:
+- `RolePermissionSeeder` - Crea roles y permisos
+- `SpecialtySeeder` - Crea especialidades médicas
+- `MedicalStaffSeeder` - Crea personal médico de prueba
+- `PatientSeeder` - Crea pacientes de prueba
+- `AdminUserSeeder` - Crea usuarios administradores
 
-6) JWT Auth: generar secreto (la configuración ya está publicada)
+**Usuarios administradores creados:**
+- Fernando Gil (fernando.gil@healthsync.com)
+- Franco Maidana (franco.maidana@healthsync.com)
+- Sebastian Lemus (sebastian.lemus@healthsync.com)
+
+**Contraseña por defecto:** `admin123`
+
+**Personal médico creado:**
+- Dr. Juan Pérez (juan.perez@healthsync.com)
+- Dra. María García (maria.garcia@healthsync.com)
+- Dr. Carlos López (carlos.lopez@healthsync.com)
+- Dra. Ana Martínez (ana.martinez@healthsync.com)
+- Dr. Roberto Silva (roberto.silva@healthsync.com)
+
+**Pacientes de prueba creados:**
+- Paciente Test 1 (paciente1@test.com)
+- Paciente Test 2 (paciente2@test.com)
+- Paciente Test 3 (paciente3@test.com)
+- Paciente Test 4 (paciente4@test.com)
+- Paciente Test 5 (paciente5@test.com)
+
+**Contraseña para personal médico y pacientes:** `password123`
+
+5) JWT Auth: generar secreto (la configuración ya está publicada)
 ```bash
 php artisan jwt:secret
 ```
 
-7) Scramble: documentación API
+6) Scramble: documentación API
 Por defecto, Scramble expone la UI y el JSON bajo `/docs/v1/api` y `/docs/v1/openapi.json`. Ajustes en `config/scramble.php`.
 
-8) Ejecutar en desarrollo
+7) Ejecutar en desarrollo
 ```bash
 php artisan serve
+```
+
+La API estará disponible en: `http://127.0.0.1:8000`
+
+## 🧪 Testing de la API
+
+### **Probar Autenticación**
+```bash
+# Login como admin
+curl -X POST http://127.0.0.1:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "fernando.gil@healthsync.com",
+    "password": "admin123"
+  }'
+
+# Login como doctor
+curl -X POST http://127.0.0.1:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "juan.perez@healthsync.com",
+    "password": "password123"
+  }'
+
+# Login como paciente
+curl -X POST http://127.0.0.1:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "paciente1@test.com",
+    "password": "password123"
+  }'
+
+# Respuesta esperada:
+# {
+#   "success": true,
+#   "message": "Login successful",
+#   "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+# }
+```
+
+### **Probar CRUD de Usuarios**
+```bash
+# Listar usuarios (requiere token de admin)
+curl -X GET http://127.0.0.1:8000/api/admin/users \
+  -H "Authorization: Bearer {admin_token}"
+
+# Ver usuarios por rol
+curl -X GET http://127.0.0.1:8000/api/admin/users/role/patient \
+  -H "Authorization: Bearer {admin_token}"
+
+# Crear paciente
+curl -X POST http://127.0.0.1:8000/api/admin/users/patient \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {admin_token}" \
+  -d '{
+    "name": "Test Patient",
+    "email": "test@example.com",
+    "password": "password123",
+    "password_confirmation": "password123",
+    "birth_date": "1990-01-01",
+    "gender": "male",
+    "phone": "+1234567890",
+    "address": "123 Test St",
+    "blood_type": "O+"
+  }'
+
+# Crear doctor
+curl -X POST http://127.0.0.1:8000/api/admin/users/doctor \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {admin_token}" \
+  -d '{
+    "name": "Test Doctor",
+    "email": "doctor@example.com",
+    "password": "password123",
+    "password_confirmation": "password123",
+    "professional_license": "LIC-123456",
+    "specialty_id": 1,
+    "active": true,
+    "appointment_duration": 30
+  }'
+
+# Ver usuarios eliminados
+curl -X GET http://127.0.0.1:8000/api/admin/users/trashed \
+  -H "Authorization: Bearer {admin_token}"
+
+# Respuesta esperada:
+# {
+#   "success": true,
+#   "data": {
+#     "current_page": 1,
+#     "data": [...],
+#     "total": 1
+#   }
+# }
 ```
 
 ---

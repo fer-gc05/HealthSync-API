@@ -44,6 +44,19 @@ class AppServiceProvider extends ServiceProvider
             return true;
         });
 
+        // Auto-discover observers from config/observers.php
+        $this->registerObservers();
+    }
 
+    /**
+     * Register model observers from config file
+     */
+    protected function registerObservers(): void
+    {
+        $observers = config('observers.observers', []);
+        
+        foreach ($observers as $model => $observer) {
+            $model::observe($observer);
+        }
     }
 }

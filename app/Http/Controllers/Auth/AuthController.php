@@ -75,7 +75,7 @@ class AuthController extends Controller
     public function me()
     {
         try {
-            $user = JWTAuth::user();
+            $user = JWTAuth::user()->load(['patient', 'medicalStaff', 'roles']);
             return response()->json([
                 'success' => true,
                 'message' => 'User retrieved successfully',

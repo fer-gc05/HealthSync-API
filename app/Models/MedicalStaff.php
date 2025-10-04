@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Modelo para el personal médico
@@ -19,9 +20,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property array|null $work_schedule
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
+ * 
  */
 class MedicalStaff extends Model
 {
+    use SoftDeletes;
     /**
      * The attributes that are mass assignable.
      *
