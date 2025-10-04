@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Admin\UserRoleController;
 use App\Http\Controllers\Admin\UsersController;
 use Illuminate\Support\Facades\Route;
@@ -13,6 +14,18 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('auth')->group(function (){
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class,'login']);
+
+    // Google OAuth routes
+    Route::prefix('google')->group(function () {
+        Route::get('redirect', [GoogleAuthController::class, 'redirect']);
+        Route::get('callback', [GoogleAuthController::class, 'callback']);
+        
+        Route::middleware('auth:api')->group(function () {
+            Route::post('link', [GoogleAuthController::class, 'link']);
+            Route::delete('unlink', [GoogleAuthController::class, 'unlink']);
+            Route::get('status', [GoogleAuthController::class, 'status']);
+        });
+    });
 
     Route::middleware('auth:api')->group(function (){
         Route::get('me', [AuthController::class, 'me']);
