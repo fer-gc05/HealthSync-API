@@ -26,6 +26,10 @@ class User extends Authenticatable implements JWTSubject
         'name',
         'email',
         'password',
+        'google_id',
+        'google_token',
+        'google_refresh_token',
+        'google_token_expires_at',
     ];
 
     /**
@@ -48,6 +52,7 @@ class User extends Authenticatable implements JWTSubject
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'google_token_expires_at' => 'datetime',
         ];
     }
 
@@ -138,5 +143,55 @@ class User extends Authenticatable implements JWTSubject
     public function receivedMessages(): HasMany
     {
         return $this->hasMany(Message::class, 'recipient_id');
+    }
+
+    /**
+     * Google OAuth Helper Methods
+     */
+    
+    /**
+     * Verificar si el usuario tiene una cuenta Google vinculada
+     */
+    public function hasGoogleAccount(): bool
+    {
+        return !is_null($this->google_id);
+    }
+
+    /**
+     * Verificar si el token de Google está expirado
+     */
+    public function isGoogleTokenExpired(): bool
+    {
+        if (!$this->google_token_expires_at) {
+            return true;
+        }
+        
+        return $this->google_token_expires_at->isPast();
+    }
+
+    /**
+     * Vincular cuenta Google al usuario
+     */
+    public function linkGoogleAccount(string $googleId, string $token, ?string $refreshToken = null, ?\DateTime $expiresAt = null): void
+    {
+        $this->update([
+            'google_id' => $googleId,
+            'google_token' => $token,
+            'google_refresh_token' => $refreshToken,
+            'google_token_expires_at' => $expiresAt,
+        ]);
+    }
+
+    /**
+     * Desvincular cuenta Google del usuario
+     */
+    public function unlinkGoogleAccount(): void
+    {
+        $this->update([
+            'google_id' => null,
+            'google_token' => null,
+            'google_refresh_token' => null,
+            'google_token_expires_at' => null,
+        ]);
     }
 }
