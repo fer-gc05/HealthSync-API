@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Modelo para los pacientes
@@ -23,9 +24,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $emergency_contact_phone
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
+ * 
  */
 class Patient extends Model
 {
+    use SoftDeletes;
     /**
      * The attributes that are mass assignable.
      *
