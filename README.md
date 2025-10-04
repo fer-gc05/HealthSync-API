@@ -29,12 +29,17 @@ Problema actual: muchos sistemas son fragmentados, duplican datos y generan erro
 - **✅ Middlewares de autorización configurados**
 - **✅ Gestión de perfiles de paciente y doctor**
 - **✅ Filtros y búsqueda avanzada de usuarios**
+- **✅ Google OAuth integrado con Laravel Socialite**
+- **✅ Autenticación OAuth con Google (stateless)**
+- **✅ Campos OAuth en tabla users (google_id, google_token, etc.)**
+- **✅ Password nullable para usuarios OAuth**
 - Documentación OpenAPI generada automáticamente con Scramble
 - Rutas públicas de estado y enlaces a documentación en `routes/web.php`
 
 Próximos pasos
 - ~~Control de roles y permisos con Spatie~~ ✅ **COMPLETADO**
 - ~~CRUD de usuarios y Soft Deletes~~ ✅ **COMPLETADO**
+- ~~Google OAuth con Laravel Socialite~~ ✅ **COMPLETADO**
 - Tiempo real y websockets con Reverb (a integrar)
 - Módulos clínicos (EHR/FHIR), teleconsulta y recordatorios
 
@@ -49,6 +54,13 @@ POST /api/auth/login             - Inicio de sesión
 GET  /api/auth/me                - Perfil del usuario autenticado
 POST /api/auth/refresh           - Renovar token
 POST /api/auth/logout            - Cerrar sesión
+
+# Google OAuth
+GET  /api/auth/google/redirect   - Redirigir a Google OAuth
+GET  /api/auth/google/callback   - Callback de Google OAuth
+POST /api/auth/google/link       - Vincular cuenta Google (autenticado)
+DELETE /api/auth/google/unlink   - Desvincular cuenta Google (autenticado)
+GET  /api/auth/google/status     - Estado de vinculación Google (autenticado)
 ```
 
 ### **Gestión de Perfil (Usuarios Autenticados)**
@@ -324,6 +336,8 @@ curl -X POST http://127.0.0.1:8000/api/admin/users/15/restore \
   - Documentación: [`https://scramble.dedoc.co/`](https://scramble.dedoc.co/)
 - Spatie Permission: gestión de roles y permisos
   - Documentación: [`https://spatie.be/docs/laravel-permission/v5/introduction`](https://spatie.be/docs/laravel-permission/v5/introduction)
+- Laravel Socialite: autenticación OAuth con Google
+  - Documentación: [`https://laravel.com/docs/socialite`](https://laravel.com/docs/socialite)
 
 Nota: Más adelante se integrará Reverb para websockets/tiempo real.
 
@@ -438,6 +452,42 @@ curl -X POST http://127.0.0.1:8000/api/auth/login \
 #   "success": true,
 #   "message": "Login successful",
 #   "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+# }
+```
+
+### **Probar Google OAuth**
+```bash
+# Redirigir a Google OAuth (abrir en navegador)
+# http://127.0.0.1:8000/api/auth/google/redirect
+
+# Vincular cuenta Google (requiere token de autenticación)
+curl -X POST http://127.0.0.1:8000/api/auth/google/link \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {token}" \
+  -d '{
+    "code": "authorization_code_from_google"
+  }'
+
+# Ver estado de vinculación Google
+curl -X GET http://127.0.0.1:8000/api/auth/google/status \
+  -H "Authorization: Bearer {token}"
+
+# Desvincular cuenta Google
+curl -X DELETE http://127.0.0.1:8000/api/auth/google/unlink \
+  -H "Authorization: Bearer {token}"
+
+# Respuesta esperada del callback:
+# {
+#   "success": true,
+#   "message": "Google OAuth authentication successful",
+#   "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+#   "user": {
+#     "id": 1,
+#     "name": "Tu Nombre",
+#     "email": "tu@email.com",
+#     "has_google_account": true,
+#     "role": "patient"
+#   }
 # }
 ```
 
