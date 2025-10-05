@@ -4,6 +4,10 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Admin\UserRoleController;
 use App\Http\Controllers\Admin\UsersController;
+use App\Http\Controllers\Doctor\MedicalRecordController as DoctorMedicalRecordController;
+use App\Http\Controllers\Patient\MedicalRecordController as PatientMedicalRecordController;
+use App\Http\Controllers\Admin\MedicalRecordController as AdminMedicalRecordController;
+use App\Http\Controllers\MedicalRecordFileController;
 use Illuminate\Support\Facades\Route;
 
 //Route::get('/user', function (Request $request) {
@@ -69,4 +73,30 @@ Route::middleware(['auth:api', 'role:admin'])->prefix('admin')->group(function (
     Route::put('users/{user}/admin', [UsersController::class, 'updateAdmin']);
     Route::put('users/{user}/patient', [UsersController::class, 'updatePatient']);
     Route::put('users/{user}/doctor', [UsersController::class, 'updateDoctor']);
+    
+    // Rutas administrativas para registros médicos
+    Route::apiResource('medical-records', AdminMedicalRecordController::class);
+    Route::get('medical-records/{medical_record}/audit', [AdminMedicalRecordController::class, 'audit']);
+});
+
+// Rutas para pacientes - registros médicos (deben ir primero para evitar conflictos)
+Route::middleware(['auth:api', 'role:patient'])->group(function () {
+    Route::get('medical-records', [PatientMedicalRecordController::class, 'index']);
+    Route::get('medical-records/{medical_record}', [PatientMedicalRecordController::class, 'show']);
+});
+
+// Rutas para doctores - registros médicos
+Route::middleware(['auth:api', 'role:doctor'])->group(function () {
+    Route::apiResource('medical-records', DoctorMedicalRecordController::class);
+    Route::get('medical-records/patient/{patient_id}', [DoctorMedicalRecordController::class, 'patientRecords']);
+    Route::get('medical-records/{medical_record}/history', [DoctorMedicalRecordController::class, 'history']);
+    Route::get('medical-records/{medical_record}/audit', [DoctorMedicalRecordController::class, 'audit']);
+});
+
+// Rutas de archivos para registros médicos (doctores y admin)
+Route::middleware(['auth:api'])->group(function () {
+    Route::post('medical-records/{medical_record}/files', [MedicalRecordFileController::class, 'store']);
+    Route::get('medical-records/{medical_record}/files', [MedicalRecordFileController::class, 'index']);
+    Route::get('medical-records/{medical_record}/files/{file_id}', [MedicalRecordFileController::class, 'download']);
+    Route::delete('medical-records/{medical_record}/files/{file_id}', [MedicalRecordFileController::class, 'destroy']);
 });

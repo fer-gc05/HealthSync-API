@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Modelo para los registros médicos
@@ -25,6 +27,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class MedicalRecord extends Model
 {
+    use SoftDeletes;
+
     /**
      * The attributes that are mass assignable.
      *
@@ -94,5 +98,54 @@ class MedicalRecord extends Model
     public function scopeByMedicalStaff($query, $medicalStaffId)
     {
         return $query->where('medical_staff_id', $medicalStaffId);
+    }
+
+    /**
+     * Relación con los archivos adjuntos
+     * Un registro puede tener muchos archivos
+     */
+    public function files(): HasMany
+    {
+        return $this->hasMany(MedicalRecordFile::class);
+    }
+
+    /**
+     * Relación con el historial de auditoría
+     * Un registro puede tener muchos registros de auditoría
+     */
+    public function audits(): HasMany
+    {
+        return $this->hasMany(MedicalRecordAudit::class);
+    }
+
+    /**
+     * Scope para registros con prescripciones
+     */
+    public function scopeWithPrescriptions($query)
+    {
+        return $query->whereNotNull('prescriptions');
+    }
+
+    /**
+     * Scope para registros con archivos
+     */
+    public function scopeWithFiles($query)
+    {
+        return $query->whereHas('files');
+    }
+
+    /**
+     * Scope para búsqueda en contenido médico
+     */
+    public function scopeSearchContent($query, $searchTerm)
+    {
+        return $query->where(function ($q) use ($searchTerm) {
+            $q->where('subjective', 'like', "%{$searchTerm}%")
+              ->orWhere('objective', 'like', "%{$searchTerm}%")
+              ->orWhere('assessment', 'like', "%{$searchTerm}%")
+              ->orWhere('plan', 'like', "%{$searchTerm}%")
+              ->orWhere('prescriptions', 'like', "%{$searchTerm}%")
+              ->orWhere('recommendations', 'like', "%{$searchTerm}%");
+        });
     }
 }

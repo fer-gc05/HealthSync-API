@@ -33,6 +33,13 @@ Problema actual: muchos sistemas son fragmentados, duplican datos y generan erro
 - **✅ Autenticación OAuth con Google (stateless)**
 - **✅ Campos OAuth en tabla users (google_id, google_token, etc.)**
 - **✅ Password nullable para usuarios OAuth**
+- **✅ CRUD completo y avanzado de registros médicos**
+- **✅ Sistema de auditoría completo para cambios en registros médicos**
+- **✅ Gestión de archivos adjuntos con validaciones de seguridad**
+- **✅ Validaciones complejas de datos médicos (signos vitales, prescripciones)**
+- **✅ Sistema de versionado de registros médicos**
+- **✅ Permisos granulares por rol para registros médicos**
+- **✅ Integración completa con sistema de roles y citas existente**
 - Documentación OpenAPI generada automáticamente con Scramble
 - Rutas públicas de estado y enlaces a documentación en `routes/web.php`
 
@@ -40,6 +47,9 @@ Próximos pasos
 - ~~Control de roles y permisos con Spatie~~ ✅ **COMPLETADO**
 - ~~CRUD de usuarios y Soft Deletes~~ ✅ **COMPLETADO**
 - ~~Google OAuth con Laravel Socialite~~ ✅ **COMPLETADO**
+- ~~CRUD avanzado de registros médicos~~ ✅ **COMPLETADO**
+- ~~Sistema de auditoría de registros médicos~~ ✅ **COMPLETADO**
+- ~~Gestión de archivos adjuntos~~ ✅ **COMPLETADO**
 - Tiempo real y websockets con Reverb (a integrar)
 - Módulos clínicos (EHR/FHIR), teleconsulta y recordatorios
 
@@ -95,6 +105,49 @@ PUT    /api/admin/users/{user}/patient   - Actualizar paciente
 PUT    /api/admin/users/{user}/doctor    - Actualizar doctor
 ```
 
+### **Registros Médicos**
+
+#### **Para Doctores**
+```
+# CRUD de registros médicos
+GET    /api/medical-records                    - Listar registros del doctor
+POST   /api/medical-records                    - Crear registro médico
+GET    /api/medical-records/{id}               - Ver registro específico
+PUT    /api/medical-records/{id}               - Actualizar registro médico
+DELETE /api/medical-records/{id}               - Eliminar registro médico
+
+# Funciones específicas
+GET    /api/medical-records/patient/{patient_id} - Registros de un paciente específico
+GET    /api/medical-records/{id}/history         - Historial de cambios del registro
+GET    /api/medical-records/{id}/audit           - Log completo de auditoría
+```
+
+#### **Para Pacientes**
+```
+GET    /api/medical-records                    - Mis registros médicos (solo lectura)
+GET    /api/medical-records/{id}               - Ver mi registro específico
+```
+
+#### **Para Administradores**
+```
+# CRUD administrativo completo
+GET    /api/admin/medical-records              - Listar todos los registros médicos
+POST   /api/admin/medical-records              - Crear registro médico
+GET    /api/admin/medical-records/{id}         - Ver cualquier registro médico
+PUT    /api/admin/medical-records/{id}         - Actualizar cualquier registro médico
+DELETE /api/admin/medical-records/{id}         - Eliminar cualquier registro médico
+GET    /api/admin/medical-records/{id}/audit   - Auditoría de cualquier registro
+```
+
+#### **Gestión de Archivos Adjuntos**
+```
+# Para doctores y administradores
+POST   /api/medical-records/{id}/files         - Subir archivo adjunto
+GET    /api/medical-records/{id}/files         - Listar archivos del registro
+GET    /api/medical-records/{id}/files/{file_id} - Descargar archivo
+DELETE /api/medical-records/{id}/files/{file_id} - Eliminar archivo
+```
+
 > **Nota:** La ruta `GET /api/admin/users` está duplicada en el código (líneas 38 y 43) pero ambas apuntan a controladores diferentes. La primera usa `UserRoleController::users` y la segunda usa `UsersController::index`. Laravel usará la primera definición.
 
 ## 🔍 Parámetros de Búsqueda
@@ -113,6 +166,35 @@ GET /api/admin/users?q=nombre&role=patient&with_trashed=true&per_page=15&page=1
 - `page` (integer): Número de página
 - `sort_by` (string): Campo de ordenamiento
 - `sort_dir` (string): Dirección (asc/desc)
+
+### **Listar Registros Médicos**
+
+#### **Para Doctores**
+```
+GET /api/medical-records?patient_id=1&date_from=2024-01-01&date_to=2024-12-31&has_prescriptions=true&q=dolor&per_page=15
+```
+
+#### **Para Pacientes**
+```
+GET /api/medical-records?date_from=2024-01-01&date_to=2024-12-31&per_page=15
+```
+
+#### **Para Administradores**
+```
+GET /api/admin/medical-records?patient_id=1&medical_staff_id=2&date_from=2024-01-01&has_files=true&q=diagnóstico&per_page=15
+```
+
+**Parámetros disponibles:**
+- `patient_id` (integer): Filtrar por paciente específico
+- `medical_staff_id` (integer): Filtrar por doctor específico (solo admin)
+- `appointment_id` (integer): Filtrar por cita específica
+- `date_from` (date): Fecha de inicio (YYYY-MM-DD)
+- `date_to` (date): Fecha de fin (YYYY-MM-DD)
+- `has_prescriptions` (boolean): Solo registros con prescripciones
+- `has_files` (boolean): Solo registros con archivos adjuntos
+- `q` (string): Búsqueda en contenido médico (subjetivo, objetivo, evaluación, plan, prescripciones)
+- `per_page` (integer): Elementos por página (1-50, default: 15)
+- `page` (integer): Número de página
 
 ## 🔐 Autenticación
 
@@ -139,8 +221,8 @@ Archivo `routes/web.php` expone metadata y enlaces útiles:
 - **patient**: Acceso limitado a datos propios
 
 ### **Permisos por rol:**
-- **Admin**: `manage-users`, `manage-doctors`, `manage-patients`, `view-reports`, `manage-system`
-- **Doctor**: `view-patients`, `create-appointments`, `update-appointments`, `view-medical-records`
+- **Admin**: `manage-users`, `manage-doctors`, `manage-patients`, `view-reports`, `manage-system`, `manage-medical-records`, `view-all-medical-records`
+- **Doctor**: `view-patients`, `create-appointments`, `update-appointments`, `view-medical-records`, `create-medical-records`, `update-medical-records`, `delete-medical-records`, `manage-medical-files`
 - **Patient**: `view-own-profile`, `create-appointments`, `view-own-appointments`, `view-own-medical-records`
 
 ### **Asignación de roles:**
@@ -156,6 +238,106 @@ El sistema implementa soft deletes para mantener la integridad de datos:
 - Los usuarios pueden ser restaurados
 - Los administradores pueden ver usuarios eliminados
 - Eliminación permanente disponible para casos especiales
+
+## 📋 Sistema de Registros Médicos
+
+### **Características Principales**
+
+#### **CRUD Avanzado**
+- **Doctores**: CRUD completo de sus propios registros médicos
+- **Pacientes**: Acceso de solo lectura a sus registros médicos
+- **Administradores**: CRUD completo de todos los registros médicos
+
+#### **Sistema de Auditoría Completo**
+- **Log automático** de todos los cambios (crear, actualizar, eliminar)
+- **Valores anteriores y nuevos** registrados en cada modificación
+- **Información del usuario** que realizó cada acción
+- **IP address y User Agent** capturados para trazabilidad
+- **Timestamps precisos** de cada modificación
+- **Acceso a auditoría** incluso de registros eliminados
+
+#### **Gestión de Archivos Adjuntos**
+- **Subida segura** de archivos (PDF, DOC, DOCX, JPG, PNG, TXT)
+- **Validación de tipos** y tamaños de archivo (máximo 10MB)
+- **Almacenamiento privado** en disco seguro
+- **Descarga segura** con verificación de permisos
+- **Metadatos completos** (nombre original, tamaño, tipo MIME, descripción)
+
+#### **Validaciones Médicas Complejas**
+- **Signos vitales** con rangos válidos (presión arterial, frecuencia cardíaca, temperatura)
+- **Formato de prescripciones** médicas
+- **Validación de diagnósticos** y evaluaciones
+- **Integridad de datos** médicos
+
+#### **Filtros y Búsqueda Avanzada**
+- **Filtros por paciente, doctor, cita**
+- **Filtros por fechas** (rango de fechas)
+- **Filtros por contenido** (prescripciones, archivos adjuntos)
+- **Búsqueda semántica** en contenido médico
+- **Paginación** optimizada
+
+### **Estructura de Datos**
+
+#### **Campos del Registro Médico**
+```json
+{
+  "appointment_id": 1,
+  "patient_id": 1,
+  "medical_staff_id": 1,
+  "subjective": "Síntomas reportados por el paciente",
+  "objective": "Hallazgos del examen físico",
+  "assessment": "Evaluación y diagnóstico",
+  "plan": "Plan de tratamiento",
+  "vital_signs": {
+    "blood_pressure": "120/80",
+    "heart_rate": 75,
+    "temperature": 36.5,
+    "respiratory_rate": 18,
+    "oxygen_saturation": 98,
+    "weight": 70,
+    "height": 175
+  },
+  "prescriptions": "Medicamentos prescritos",
+  "recommendations": "Recomendaciones para el paciente"
+}
+```
+
+#### **Sistema de Auditoría**
+```json
+{
+  "medical_record_id": 1,
+  "user_id": 1,
+  "action": "created|updated|deleted|restored|force_deleted",
+  "old_values": {...},
+  "new_values": {...},
+  "ip_address": "127.0.0.1",
+  "user_agent": "curl/8.11.1",
+  "created_at": "2024-01-01T00:00:00Z"
+}
+```
+
+### **Permisos Granulares**
+
+#### **Doctores**
+- ✅ Crear registros médicos para sus pacientes
+- ✅ Ver solo sus propios registros médicos
+- ✅ Actualizar solo sus propios registros médicos
+- ✅ Eliminar solo sus propios registros médicos
+- ✅ Subir archivos a sus registros médicos
+- ✅ Ver auditoría de sus registros médicos
+
+#### **Pacientes**
+- ✅ Ver solo sus propios registros médicos
+- ✅ Descargar archivos de sus registros médicos
+- ❌ No pueden crear, editar o eliminar registros
+- ❌ No pueden subir archivos
+
+#### **Administradores**
+- ✅ Acceso completo a todos los registros médicos
+- ✅ Crear registros médicos para cualquier doctor/paciente
+- ✅ Ver, editar y eliminar cualquier registro médico
+- ✅ Ver auditoría de cualquier registro médico
+- ✅ Gestionar archivos de cualquier registro médico
 
 ## 📊 Respuestas de la API
 
@@ -325,6 +507,66 @@ curl -X GET http://127.0.0.1:8000/api/admin/users/trashed \
 ```bash
 curl -X POST http://127.0.0.1:8000/api/admin/users/15/restore \
   -H "Authorization: Bearer {admin_token}"
+```
+
+### **Registros Médicos**
+
+#### **Crear Registro Médico (Doctor)**
+```bash
+curl -X POST http://127.0.0.1:8000/api/medical-records \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {doctor_token}" \
+  -d '{
+    "appointment_id": 1,
+    "patient_id": 1,
+    "subjective": "Paciente refiere dolor de cabeza desde hace 2 días",
+    "objective": "Paciente alerta, orientado. Presión arterial: 130/85 mmHg",
+    "assessment": "Cefalea tensional",
+    "plan": "Reposo, analgésicos, seguimiento",
+    "vital_signs": {
+      "blood_pressure": "130/85",
+      "heart_rate": 80,
+      "temperature": 36.8
+    },
+    "prescriptions": "Ibuprofeno 400mg cada 8 horas",
+    "recommendations": "Evitar estrés, descansar"
+  }'
+```
+
+#### **Listar Registros Médicos con Filtros**
+```bash
+# Para doctores
+curl -X GET "http://127.0.0.1:8000/api/medical-records?patient_id=1&date_from=2024-01-01&has_prescriptions=true" \
+  -H "Authorization: Bearer {doctor_token}"
+
+# Para pacientes
+curl -X GET "http://127.0.0.1:8000/api/medical-records?date_from=2024-01-01" \
+  -H "Authorization: Bearer {patient_token}"
+
+# Para administradores
+curl -X GET "http://127.0.0.1:8000/api/admin/medical-records?medical_staff_id=1&has_files=true" \
+  -H "Authorization: Bearer {admin_token}"
+```
+
+#### **Subir Archivo Adjunto**
+```bash
+curl -X POST http://127.0.0.1:8000/api/medical-records/1/files \
+  -H "Authorization: Bearer {doctor_token}" \
+  -F "file=@documento.pdf" \
+  -F "description=Radiografía de tórax"
+```
+
+#### **Ver Auditoría de Registro Médico**
+```bash
+curl -X GET http://127.0.0.1:8000/api/medical-records/1/audit \
+  -H "Authorization: Bearer {doctor_token}"
+```
+
+#### **Descargar Archivo**
+```bash
+curl -X GET http://127.0.0.1:8000/api/medical-records/1/files/1 \
+  -H "Authorization: Bearer {doctor_token}" \
+  -o archivo_descargado.pdf
 ```
 
 ---
@@ -547,21 +789,165 @@ curl -X GET http://127.0.0.1:8000/api/admin/users/trashed \
 # }
 ```
 
+### **Probar Sistema de Registros Médicos**
+
+#### **Crear Registro Médico**
+```bash
+# Login como doctor
+curl -X POST http://127.0.0.1:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "juan.perez@healthsync.com",
+    "password": "password123"
+  }'
+
+# Crear registro médico
+curl -X POST http://127.0.0.1:8000/api/medical-records \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {doctor_token}" \
+  -d '{
+    "appointment_id": 1,
+    "patient_id": 1,
+    "subjective": "Paciente refiere dolor abdominal intenso",
+    "objective": "Paciente con dolor a la palpación en cuadrante inferior derecho",
+    "assessment": "Apendicitis aguda probable",
+    "plan": "Solicitar laboratorios, ecografía abdominal",
+    "vital_signs": {
+      "blood_pressure": "120/80",
+      "heart_rate": 95,
+      "temperature": 38.1
+    },
+    "prescriptions": "Dipirona 500mg cada 6 horas",
+    "recommendations": "Reposo absoluto, dieta líquida"
+  }'
+
+# Respuesta esperada:
+# {
+#   "success": true,
+#   "data": {
+#     "id": 1,
+#     "appointment_id": 1,
+#     "patient_id": 1,
+#     "medical_staff_id": 1,
+#     "subjective": "Paciente refiere dolor abdominal intenso",
+#     "objective": "Paciente con dolor a la palpación...",
+#     "assessment": "Apendicitis aguda probable",
+#     "plan": "Solicitar laboratorios, ecografía abdominal",
+#     "vital_signs": {...},
+#     "prescriptions": "Dipirona 500mg cada 6 horas",
+#     "recommendations": "Reposo absoluto, dieta líquida",
+#     "patient": {...},
+#     "medical_staff": {...},
+#     "appointment": {...}
+#   }
+# }
+```
+
+#### **Probar Sistema de Auditoría**
+```bash
+# Ver auditoría del registro médico
+curl -X GET http://127.0.0.1:8000/api/medical-records/1/audit \
+  -H "Authorization: Bearer {doctor_token}"
+
+# Respuesta esperada:
+# {
+#   "success": true,
+#   "data": {
+#     "current_page": 1,
+#     "data": [
+#       {
+#         "id": 1,
+#         "medical_record_id": 1,
+#         "user_id": 1,
+#         "action": "created",
+#         "old_values": null,
+#         "new_values": {...},
+#         "ip_address": "127.0.0.1",
+#         "user_agent": "curl/8.11.1",
+#         "created_at": "2024-01-01T00:00:00Z",
+#         "user": {...}
+#       }
+#     ],
+#     "total": 1
+#   }
+# }
+```
+
+#### **Probar Gestión de Archivos**
+```bash
+# Crear archivo de prueba
+echo "Este es un archivo de prueba" > test_file.txt
+
+# Subir archivo
+curl -X POST http://127.0.0.1:8000/api/medical-records/1/files \
+  -H "Authorization: Bearer {doctor_token}" \
+  -F "file=@test_file.txt" \
+  -F "description=Archivo de prueba"
+
+# Listar archivos
+curl -X GET http://127.0.0.1:8000/api/medical-records/1/files \
+  -H "Authorization: Bearer {doctor_token}"
+
+# Descargar archivo
+curl -X GET http://127.0.0.1:8000/api/medical-records/1/files/1 \
+  -H "Authorization: Bearer {doctor_token}" \
+  -o downloaded_file.txt
+
+# Eliminar archivo
+curl -X DELETE http://127.0.0.1:8000/api/medical-records/1/files/1 \
+  -H "Authorization: Bearer {doctor_token}"
+```
+
+#### **Probar Permisos por Rol**
+```bash
+# Login como paciente
+curl -X POST http://127.0.0.1:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "paciente1@test.com",
+    "password": "password123"
+  }'
+
+# Intentar crear registro médico (debe fallar)
+curl -X POST http://127.0.0.1:8000/api/medical-records \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {patient_token}" \
+  -d '{"appointment_id": 1, "patient_id": 1}'
+
+# Ver sus propios registros (debe funcionar)
+curl -X GET http://127.0.0.1:8000/api/medical-records \
+  -H "Authorization: Bearer {patient_token}"
+```
+
 ---
 
 ## Roadmap funcional
-Must-have
-- Registro de pacientes y autenticación segura (en progreso: JWT)
+
+### ✅ **COMPLETADO**
+- **Registro de pacientes y autenticación segura** (JWT implementado)
+- **Sistema de roles y permisos** (Spatie Permission)
+- **CRUD completo de usuarios** (administradores, doctores, pacientes)
+- **Google OAuth** (Laravel Socialite)
+- **CRUD avanzado de registros médicos** (con auditoría completa)
+- **Sistema de auditoría** (log automático de cambios)
+- **Gestión de archivos adjuntos** (subida, descarga, eliminación segura)
+- **Validaciones médicas complejas** (signos vitales, prescripciones)
+- **Permisos granulares por rol** (doctores, pacientes, administradores)
+- **Soft deletes** (eliminación lógica con restauración)
+
+### 🚧 **EN PROGRESO**
 - Gestión de citas con disponibilidad en tiempo real
 - Recordatorios automáticos (correo/SMS)
 - Teleconsulta con video y chat seguro
 - Integración EHR (FHIR) lectura/escritura
 
-Nice-to-have
+### 📋 **PLANIFICADO**
 - Asignación de citas según prioridad médica
 - Facturación por sesión
 - Gestión de listas de espera y redistribución
 - Analítica para predecir cancelaciones y no-shows
+- Tiempo real y websockets con Reverb
+- Módulos clínicos avanzados (EHR/FHIR)
 
 ---
 
