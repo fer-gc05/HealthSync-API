@@ -1,13 +1,14 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Files;
 
-use App\Http\Requests\StoreMedicalRecordFileRequest;
+use App\Http\Requests\Files\StoreMedicalRecordFileRequest;
 use App\Models\MedicalRecord;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use App\Http\Controllers\Controller;
 
 class MedicalRecordFileController extends Controller
 {

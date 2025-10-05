@@ -7,7 +7,7 @@ use App\Http\Controllers\Admin\UsersController;
 use App\Http\Controllers\Doctor\MedicalRecordController as DoctorMedicalRecordController;
 use App\Http\Controllers\Patient\MedicalRecordController as PatientMedicalRecordController;
 use App\Http\Controllers\Admin\MedicalRecordController as AdminMedicalRecordController;
-use App\Http\Controllers\MedicalRecordFileController;
+use App\Http\Controllers\Files\MedicalRecordFileController;
 use Illuminate\Support\Facades\Route;
 
 //Route::get('/user', function (Request $request) {
