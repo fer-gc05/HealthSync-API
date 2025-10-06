@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Modelo para las citas médicas
- * 
+ *
  * @property int $id
  * @property int $patient_id
  * @property int $medical_staff_id
@@ -29,6 +30,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Appointment extends Model
 {
+    use SoftDeletes;
     /**
      * The attributes that are mass assignable.
      *

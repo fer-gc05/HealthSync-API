@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Modelo para los mensajes
- * 
+ *
  * @property int $id
  * @property int $appointment_id
  * @property int $sender_id
@@ -21,6 +22,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class Message extends Model
 {
+    use SoftDeletes;
+
     /**
      * The attributes that are mass assignable.
      *
