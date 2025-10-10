@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Jobs\SendWelcomeEmailJob;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -85,6 +86,9 @@ class GoogleAuthController extends Controller
 
                 // Asignar rol por defecto
                 $user->assignRole('patient');
+                
+                // Enviar email de bienvenida para usuarios nuevos
+                SendWelcomeEmailJob::dispatch($user->email, $user->name);
             }
 
             // Generar JWT token

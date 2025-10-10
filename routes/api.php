@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\GoogleAuthController;
+use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Admin\UserRoleController;
 use App\Http\Controllers\Admin\UsersController;
 use App\Http\Controllers\Doctor\MedicalRecordController as DoctorMedicalRecordController;
@@ -19,6 +20,10 @@ Route::prefix('auth')->group(function (){
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class,'login']);
 
+    // Email verification routes
+    Route::post('verify-email', [EmailVerificationController::class, 'verify']);
+    Route::post('resend-verification', [EmailVerificationController::class, 'resend']);
+
     // Google OAuth routes
     Route::prefix('google')->group(function () {
         Route::get('redirect', [GoogleAuthController::class, 'redirect']);
@@ -35,6 +40,7 @@ Route::prefix('auth')->group(function (){
         Route::get('me', [AuthController::class, 'me']);
         Route::post('logout', [AuthController::class, 'logout']);
         Route::post('refresh', [AuthController::class, 'refresh']);
+        Route::get('verification-status', [EmailVerificationController::class, 'status']);
     });
 });
 
@@ -43,11 +49,11 @@ Route::middleware('auth:api')->group(function () {
     // Actualizar perfil básico del usuario autenticado
     Route::put('profile', [UsersController::class, 'updateOwnProfile']);
     
-    // Completar perfil de paciente para el usuario autenticado
-    Route::post('profile/complete/patient', [UsersController::class, 'completeOwnPatientProfile']);
-    
-    // Actualizar datos específicos de paciente para el usuario autenticado
-    Route::put('profile/patient', [UsersController::class, 'updateOwnPatientData']);
+    // Completar perfil de paciente para el usuario autenticado (requiere email verificado)
+    Route::middleware('verified')->group(function () {
+        Route::post('profile/complete/patient', [UsersController::class, 'completeOwnPatientProfile']);
+        Route::put('profile/patient', [UsersController::class, 'updateOwnPatientData']);
+    });
 });
 
 // Rutas administrativas protegidas por el rol de admin
@@ -80,13 +86,13 @@ Route::middleware(['auth:api', 'role:admin'])->prefix('admin')->group(function (
 });
 
 // Rutas para pacientes - registros médicos (deben ir primero para evitar conflictos)
-Route::middleware(['auth:api', 'role:patient'])->group(function () {
+Route::middleware(['auth:api', 'role:patient', 'verified'])->group(function () {
     Route::get('medical-records', [PatientMedicalRecordController::class, 'index']);
     Route::get('medical-records/{medical_record}', [PatientMedicalRecordController::class, 'show']);
 });
 
 // Rutas para doctores - registros médicos
-Route::middleware(['auth:api', 'role:doctor'])->group(function () {
+Route::middleware(['auth:api', 'role:doctor', 'verified'])->group(function () {
     Route::apiResource('medical-records', DoctorMedicalRecordController::class);
     Route::get('medical-records/patient/{patient_id}', [DoctorMedicalRecordController::class, 'patientRecords']);
     Route::get('medical-records/{medical_record}/history', [DoctorMedicalRecordController::class, 'history']);
@@ -94,7 +100,7 @@ Route::middleware(['auth:api', 'role:doctor'])->group(function () {
 });
 
 // Rutas de archivos para registros médicos (doctores y admin)
-Route::middleware(['auth:api'])->group(function () {
+Route::middleware(['auth:api', 'verified'])->group(function () {
     Route::post('medical-records/{medical_record}/files', [MedicalRecordFileController::class, 'store']);
     Route::get('medical-records/{medical_record}/files', [MedicalRecordFileController::class, 'index']);
     Route::get('medical-records/{medical_record}/files/{file_id}', [MedicalRecordFileController::class, 'download']);
