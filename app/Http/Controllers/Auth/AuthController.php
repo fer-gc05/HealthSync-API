@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\User;
+use App\Jobs\SendEmailVerificationJob;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -26,10 +27,14 @@ class AuthController extends Controller
 
             $user->assignRole('patient');
 
+            // Enviar email de verificación
+            SendEmailVerificationJob::dispatch($user->email, $user->name);
+
             return response()->json([
                 'success' => true,
-                'message' => 'User registered successfully',
+                'message' => 'User registered successfully. An email verification code has been sent to your email.',
                 'token' => $token,
+                'email_verification_required' => true
             ], Response::HTTP_CREATED);
         } catch (\Exception $e) {
             return response()->json([
