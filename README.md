@@ -463,12 +463,33 @@ El sistema implementa soft deletes para mantener la integridad de datos:
 
 ### **Ejemplos de Respuestas Reales**
 
-**Login exitoso:**
+**Login exitoso (Admin):**
 ```json
 {
   "success": true,
   "message": "Login successful",
-  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+  "role": "admin",
+  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwMDAvYXBpL2F1dGgvbG9naW4iLCJpYXQiOjE3NjA4NDUzNTUsImV4cCI6MTc2MDg0ODk1NSwibmJmIjoxNzYwODQ1MzU1LCJqdGkiOiJyekdnTFdPWTI0Vkp2QVNWIiwic3ViIjoiMjgiLCJwcnYiOiIyM2JkNWM4OTQ5ZjYwMGFkYjM5ZTcwMWM0MDA4NzJkYjdhNTk3NmY3Iiwicm9sZSI6ImFkbWluIiwicGVybWlzc2lvbnMiOlsibWFuYWdlLXVzZXJzIiwibWFuYWdlLWRvY3RvcnMiLCJtYW5hZ2UtcGF0aWVudHMiLCJtYW5hZ2Utc3BlY2lhbHRpZXMiLCJtYW5hZ2UtYXBwb2ludG1lbnRzIiwibWFuYWdlLW1lZGljYWwtcmVjb3JkcyIsInZpZXctcmVwb3J0cyIsInZpZXctYW5hbHl0aWNzIiwibWFuYWdlLXN5c3RlbSIsIm1hbmFnZS1ub3RpZmljYXRpb25zIiwidmlldy1hbGwtYXBwb2ludG1lbnRzIiwiY2FuY2VsLWFueS1hcHBvaW50bWVudCIsImFzc2lnbi1hcHBvaW50bWVudHMiXX0.5h27kBInZYZ10Xct-oJR2r6nM0BkKdG6hdIHknft1zs"
+}
+```
+
+**Login exitoso (Doctor):**
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "role": "doctor",
+  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwMDAvYXBpL2F1dGgvbG9naW4iLCJpYXQiOjE3NjA4NDUzNTksImV4cCI6MTc2MDg0ODk1OSwibmJmIjoxNzYwODQ1MzU5LCJqdGkiOiJ6UUhSMTVSU0FkQXh6U2VmIiwic3ViIjoiMSIsInBydiI6IjIzYmQ1Yzg5NDlmNjAwYWRiMzllNzAxYzQwMDg3MmRiN2E1OTc2ZjciLCJyb2xlIjoiZG9jdG9yIiwicGVybWlzc2lvbnMiOlsidmlldy1wYXRpZW50cyIsInZpZXctcGF0aWVudC1kZXRhaWxzIiwiY3JlYXRlLWFwcG9pbnRtZW50cyIsInVwZGF0ZS1hcHBvaW50bWVudHMiLCJjYW5jZWwtYXBwb2ludG1lbnRzIiwidmlldy1tZWRpY2FsLXJlY29yZHMiLCJjcmVhdGUtbWVkaWNhbC1yZWNvcmRzIiwidXBkYXRlLW1lZGljYWwtcmVjb3JkcyIsInZpZXctb3duLWFwcG9pbnRtZW50cyIsIm1hbmFnZS1hdmFpbGFiaWxpdHkiLCJ2aWV3LXBhdGllbnQtaGlzdG9yeSIsInByZXNjcmliZS1tZWRpY2F0aW9ucyIsInJlcXVlc3QtdGVzdHMiXX0.M27n_ay_ssGAt5I6j0uPd-hs3ZnXmmzZDJYpTfL5ghc"
+}
+```
+
+**Login exitoso (Paciente):**
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "role": "patient",
+  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwMDAvYXBpL2F1dGgvbG9naW4iLCJpYXQiOjE3NjA4NDUzNjMsImV4cCI6MTc2MDg0ODk2MywibmJmIjoxNzYwODQ1MzYzLCJqdGkiOiI2MU9oUlQ1bFAxMkx1Nk1LIiwic3ViIjoiMTMiLCJwcnYiOiIyM2JkNWM4OTQ5ZjYwMGFkYjM5ZTcwMWM0MDA4NzJkYjdhNTk3NmY3Iiwicm9sZSI6InBhdGllbnQiLCJwZXJtaXNzaW9ucyI6WyJjcmVhdGUtYXBwb2ludG1lbnRzIiwidmlldy1vd24tYXBwb2ludG1lbnRzIiwidmlldy1vd24tcHJvZmlsZSIsInVwZGF0ZS1vd24tcHJvZmlsZSIsImNhbmNlbC1vd24tYXBwb2ludG1lbnRzIiwidmlldy1vd24tbWVkaWNhbC1yZWNvcmRzIiwidmlldy1vd24tcHJlc2NyaXB0aW9ucyIsInZpZXctb3duLXRlc3QtcmVzdWx0cyIsInNlbmQtbWVzc2FnZXMiLCJ2aWV3LW5vdGlmaWNhdGlvbnMiXX0.s64RXdV13FyplLzeS5T1b1opv__iAvn0r9Aft9eKRcY"
 }
 ```
 
@@ -477,6 +498,7 @@ El sistema implementa soft deletes para mantener la integridad de datos:
 {
   "success": true,
   "message": "User registered successfully",
+  "role": "patient",
   "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
 }
 ```
@@ -498,6 +520,30 @@ El sistema implementa soft deletes para mantener la integridad de datos:
 {
   "message": "User does not have the right roles.",
   "exception": "Spatie\\Permission\\Exceptions\\UnauthorizedException"
+}
+```
+
+**Error de credenciales inválidas:**
+```json
+{
+  "success": false,
+  "message": "Invalid credentials"
+}
+```
+
+**Error de token expirado:**
+```json
+{
+  "success": false,
+  "message": "Token has expired"
+}
+```
+
+**Error de usuario no encontrado:**
+```json
+{
+  "success": false,
+  "message": "User not found"
 }
 ```
 
