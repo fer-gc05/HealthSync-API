@@ -51,6 +51,13 @@ class Appointment extends Model
         'cancellation_reason',
         'attendance_status',
         'attendance_notes',
+        'google_event_id',
+        'meeting_link',
+        'meeting_password',
+        'calendar_synced',
+        'auto_assigned',
+        'waitlist_position',
+        'google_event_data',
     ];
 
     /**
@@ -62,6 +69,9 @@ class Appointment extends Model
         'start_date' => 'datetime',
         'end_date' => 'datetime',
         'urgent' => 'boolean',
+        'calendar_synced' => 'boolean',
+        'auto_assigned' => 'boolean',
+        'google_event_data' => 'array',
     ];
 
     /**
@@ -139,5 +149,96 @@ class Appointment extends Model
     public function scopeInDateRange($query, $startDate, $endDate)
     {
         return $query->whereBetween('start_date', [$startDate, $endDate]);
+    }
+
+    /**
+     * Scope para citas sincronizadas con Google Calendar
+     */
+    public function scopeSyncedWithGoogle($query)
+    {
+        return $query->where('calendar_synced', true);
+    }
+
+    /**
+     * Scope para citas asignadas automáticamente
+     */
+    public function scopeAutoAssigned($query)
+    {
+        return $query->where('auto_assigned', true);
+    }
+
+    /**
+     * Scope para citas virtuales
+     */
+    public function scopeVirtual($query)
+    {
+        return $query->where('type', 'virtual');
+    }
+
+    /**
+     * Scope para citas presenciales
+     */
+    public function scopePresencial($query)
+    {
+        return $query->where('type', 'presencial');
+    }
+
+    /**
+     * Scope para citas por prioridad
+     */
+    public function scopeByPriority($query, $priority)
+    {
+        return $query->where('priority', $priority);
+    }
+
+    /**
+     * Scope para citas del día
+     */
+    public function scopeToday($query)
+    {
+        return $query->whereDate('start_date', today());
+    }
+
+    /**
+     * Scope para citas de la semana
+     */
+    public function scopeThisWeek($query)
+    {
+        return $query->whereBetween('start_date', [
+            now()->startOfWeek(),
+            now()->endOfWeek()
+        ]);
+    }
+
+    /**
+     * Verificar si la cita es virtual
+     */
+    public function isVirtual(): bool
+    {
+        return $this->type === 'virtual';
+    }
+
+    /**
+     * Verificar si la cita está sincronizada con Google Calendar
+     */
+    public function isSyncedWithGoogle(): bool
+    {
+        return $this->calendar_synced && !empty($this->google_event_id);
+    }
+
+    /**
+     * Obtener el enlace de la teleconsulta
+     */
+    public function getTeleconsultationLink(): ?string
+    {
+        return $this->isVirtual() ? $this->meeting_link : null;
+    }
+
+    /**
+     * Verificar si la cita está en la lista de espera
+     */
+    public function isInWaitlist(): bool
+    {
+        return !is_null($this->waitlist_position);
     }
 }

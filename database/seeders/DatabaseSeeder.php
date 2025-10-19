@@ -29,10 +29,38 @@ class DatabaseSeeder extends Seeder
         // Create admin users
         $this->call(AdminUserSeeder::class);
 
-        // Create a test admin user
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // Seed doctor availability
+        $this->call(DoctorAvailabilitySeeder::class);
+
+        // Seed medical records (depends on medical staff)
+        $this->call(MedicalRecordSeeder::class);
+
+        // Assign roles to users
+        $this->assignRolesToUsers();
+    }
+
+    private function assignRolesToUsers(): void
+    {
+        // Assign patient role to patient users
+        $patientRole = \Spatie\Permission\Models\Role::where('name', 'patient')->first();
+        if ($patientRole) {
+            \App\Models\User::whereHas('patient')->get()->each(function ($user) use ($patientRole) {
+                if (!$user->hasRole('patient')) {
+                    $user->assignRole($patientRole);
+                }
+            });
+        }
+
+        // Assign doctor role to medical staff users
+        $doctorRole = \Spatie\Permission\Models\Role::where('name', 'doctor')->first();
+        if ($doctorRole) {
+            \App\Models\User::whereHas('medicalStaff')->get()->each(function ($user) use ($doctorRole) {
+                if (!$user->hasRole('doctor')) {
+                    $user->assignRole($doctorRole);
+                }
+            });
+        }
+
+        $this->command->info('Roles assigned to users successfully!');
     }
 }

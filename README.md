@@ -1,4 +1,4 @@
-## HealthSync API – Portal Web de Coordinación de Citas y Teleasistencia
+## SaludOne API – Portal Web de Coordinación de Citas y Teleasistencia
 
 Aplicación web orientada a clínicas y centros de salud para gestionar citas presenciales y virtuales, historiales médicos y comunicación con pacientes. Proyecto vertical: Web App. Sector: HealthTech.
 
@@ -40,6 +40,16 @@ Problema actual: muchos sistemas son fragmentados, duplican datos y generan erro
 - **✅ Sistema de versionado de registros médicos**
 - **✅ Permisos granulares por rol para registros médicos**
 - **✅ Integración completa con sistema de roles y citas existente**
+- **✅ Sistema completo de gestión de citas médicas**
+- **✅ Algoritmo inteligente de asignación automática de doctores**
+- **✅ Sistema de lista de espera para citas**
+- **✅ Integración completa con Google Calendar**
+- **✅ Teleconsulta con Google Meet automática**
+- **✅ Gestión de disponibilidad de doctores**
+- **✅ Recordatorios automáticos por email**
+- **✅ Sincronización bidireccional con Google Calendar**
+- **✅ Controlador independiente de Google Calendar**
+- **✅ Comandos Artisan para gestión de tokens de Google**
 - Documentación OpenAPI generada automáticamente con Scramble
 - Rutas públicas de estado y enlaces a documentación en `routes/web.php`
 
@@ -50,8 +60,11 @@ Próximos pasos
 - ~~CRUD avanzado de registros médicos~~ ✅ **COMPLETADO**
 - ~~Sistema de auditoría de registros médicos~~ ✅ **COMPLETADO**
 - ~~Gestión de archivos adjuntos~~ ✅ **COMPLETADO**
+- ~~Sistema completo de gestión de citas~~ ✅ **COMPLETADO**
+- ~~Integración con Google Calendar~~ ✅ **COMPLETADO**
+- ~~Teleconsulta con Google Meet~~ ✅ **COMPLETADO**
 - Tiempo real y websockets con Reverb (a integrar)
-- Módulos clínicos (EHR/FHIR), teleconsulta y recordatorios
+- Módulos clínicos avanzados (EHR/FHIR)
 
 ---
 
@@ -103,6 +116,74 @@ POST   /api/admin/users/doctor           - Crear doctor
 PUT    /api/admin/users/{user}/admin     - Actualizar administrador
 PUT    /api/admin/users/{user}/patient   - Actualizar paciente
 PUT    /api/admin/users/{user}/doctor    - Actualizar doctor
+```
+
+### **Sistema de Citas Médicas**
+
+#### **Para Administradores**
+```
+# Gestión completa de citas
+GET    /api/admin/appointments                    - Listar todas las citas (con filtros)
+POST   /api/admin/appointments                    - Crear cita administrativa
+GET    /api/admin/appointments/{id}               - Ver cita específica
+PUT    /api/admin/appointments/{id}               - Actualizar cita
+DELETE /api/admin/appointments/{id}               - Eliminar cita
+
+# Estadísticas y gestión
+GET    /api/admin/appointments/stats              - Estadísticas de citas
+GET    /api/admin/appointments/availability       - Disponibilidad de doctores
+POST   /api/admin/appointments/assign-optimal     - Asignar doctor óptimo
+POST   /api/admin/appointments/{id}/sync-google   - Sincronizar con Google Calendar
+```
+
+#### **Para Doctores**
+```
+# Gestión de citas del doctor
+GET    /api/doctor/appointments                   - Mis citas (con filtros)
+GET    /api/doctor/appointments/{id}              - Ver cita específica
+PUT    /api/doctor/appointments/{id}              - Actualizar cita
+POST   /api/doctor/appointments/schedule         - Programar nueva cita
+
+# Disponibilidad y agenda
+GET    /api/doctor/appointments/today             - Citas de hoy
+GET    /api/doctor/appointments/this-week         - Citas de esta semana
+GET    /api/doctor/appointments/availability      - Mi disponibilidad
+PUT    /api/doctor/appointments/availability      - Actualizar disponibilidad
+GET    /api/doctor/appointments/waitlist          - Lista de espera
+
+# Teleconsulta
+POST   /api/doctor/appointments/{id}/start-teleconsultation - Iniciar teleconsulta
+POST   /api/doctor/appointments/{id}/end-teleconsultation  - Finalizar teleconsulta
+```
+
+#### **Para Pacientes**
+```
+# Gestión de citas del paciente
+GET    /api/patient/appointments                  - Mis citas (con filtros)
+GET    /api/patient/appointments/upcoming         - Próximas citas
+GET    /api/patient/appointments/history          - Historial de citas
+POST   /api/patient/appointments/book             - Reservar cita
+PUT    /api/patient/appointments/{id}/reschedule - Reprogramar cita
+POST   /api/patient/appointments/{id}/cancel     - Cancelar cita
+
+# Consultas y teleconsulta
+GET    /api/patient/appointments/available-slots  - Horarios disponibles
+GET    /api/patient/appointments/available-doctors - Doctores disponibles
+GET    /api/patient/appointments/{id}/teleconsultation-link - Enlace de teleconsulta
+```
+
+### **Google Calendar (Independiente)**
+```
+# Autenticación OAuth
+GET    /api/calendar/auth/google                  - Redirigir a Google OAuth
+GET    /api/calendar/auth/google/callback         - Callback de Google OAuth
+
+# Gestión de eventos
+GET    /api/calendar/events                       - Listar eventos
+POST   /api/calendar/events                       - Crear evento
+GET    /api/calendar/events/{id}                  - Ver evento específico
+PUT    /api/calendar/events/{id}                   - Actualizar evento
+DELETE /api/calendar/events/{id}                  - Eliminar evento
 ```
 
 ### **Registros Médicos**
@@ -382,12 +463,33 @@ El sistema implementa soft deletes para mantener la integridad de datos:
 
 ### **Ejemplos de Respuestas Reales**
 
-**Login exitoso:**
+**Login exitoso (Admin):**
 ```json
 {
   "success": true,
   "message": "Login successful",
-  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+  "role": "admin",
+  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwMDAvYXBpL2F1dGgvbG9naW4iLCJpYXQiOjE3NjA4NDUzNTUsImV4cCI6MTc2MDg0ODk1NSwibmJmIjoxNzYwODQ1MzU1LCJqdGkiOiJyekdnTFdPWTI0Vkp2QVNWIiwic3ViIjoiMjgiLCJwcnYiOiIyM2JkNWM4OTQ5ZjYwMGFkYjM5ZTcwMWM0MDA4NzJkYjdhNTk3NmY3Iiwicm9sZSI6ImFkbWluIiwicGVybWlzc2lvbnMiOlsibWFuYWdlLXVzZXJzIiwibWFuYWdlLWRvY3RvcnMiLCJtYW5hZ2UtcGF0aWVudHMiLCJtYW5hZ2Utc3BlY2lhbHRpZXMiLCJtYW5hZ2UtYXBwb2ludG1lbnRzIiwibWFuYWdlLW1lZGljYWwtcmVjb3JkcyIsInZpZXctcmVwb3J0cyIsInZpZXctYW5hbHl0aWNzIiwibWFuYWdlLXN5c3RlbSIsIm1hbmFnZS1ub3RpZmljYXRpb25zIiwidmlldy1hbGwtYXBwb2ludG1lbnRzIiwiY2FuY2VsLWFueS1hcHBvaW50bWVudCIsImFzc2lnbi1hcHBvaW50bWVudHMiXX0.5h27kBInZYZ10Xct-oJR2r6nM0BkKdG6hdIHknft1zs"
+}
+```
+
+**Login exitoso (Doctor):**
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "role": "doctor",
+  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwMDAvYXBpL2F1dGgvbG9naW4iLCJpYXQiOjE3NjA4NDUzNTksImV4cCI6MTc2MDg0ODk1OSwibmJmIjoxNzYwODQ1MzU5LCJqdGkiOiJ6UUhSMTVSU0FkQXh6U2VmIiwic3ViIjoiMSIsInBydiI6IjIzYmQ1Yzg5NDlmNjAwYWRiMzllNzAxYzQwMDg3MmRiN2E1OTc2ZjciLCJyb2xlIjoiZG9jdG9yIiwicGVybWlzc2lvbnMiOlsidmlldy1wYXRpZW50cyIsInZpZXctcGF0aWVudC1kZXRhaWxzIiwiY3JlYXRlLWFwcG9pbnRtZW50cyIsInVwZGF0ZS1hcHBvaW50bWVudHMiLCJjYW5jZWwtYXBwb2ludG1lbnRzIiwidmlldy1tZWRpY2FsLXJlY29yZHMiLCJjcmVhdGUtbWVkaWNhbC1yZWNvcmRzIiwidXBkYXRlLW1lZGljYWwtcmVjb3JkcyIsInZpZXctb3duLWFwcG9pbnRtZW50cyIsIm1hbmFnZS1hdmFpbGFiaWxpdHkiLCJ2aWV3LXBhdGllbnQtaGlzdG9yeSIsInByZXNjcmliZS1tZWRpY2F0aW9ucyIsInJlcXVlc3QtdGVzdHMiXX0.M27n_ay_ssGAt5I6j0uPd-hs3ZnXmmzZDJYpTfL5ghc"
+}
+```
+
+**Login exitoso (Paciente):**
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "role": "patient",
+  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwMDAvYXBpL2F1dGgvbG9naW4iLCJpYXQiOjE3NjA4NDUzNjMsImV4cCI6MTc2MDg0ODk2MywibmJmIjoxNzYwODQ1MzYzLCJqdGkiOiI2MU9oUlQ1bFAxMkx1Nk1LIiwic3ViIjoiMTMiLCJwcnYiOiIyM2JkNWM4OTQ5ZjYwMGFkYjM5ZTcwMWM0MDA4NzJkYjdhNTk3NmY3Iiwicm9sZSI6InBhdGllbnQiLCJwZXJtaXNzaW9ucyI6WyJjcmVhdGUtYXBwb2ludG1lbnRzIiwidmlldy1vd24tYXBwb2ludG1lbnRzIiwidmlldy1vd24tcHJvZmlsZSIsInVwZGF0ZS1vd24tcHJvZmlsZSIsImNhbmNlbC1vd24tYXBwb2ludG1lbnRzIiwidmlldy1vd24tbWVkaWNhbC1yZWNvcmRzIiwidmlldy1vd24tcHJlc2NyaXB0aW9ucyIsInZpZXctb3duLXRlc3QtcmVzdWx0cyIsInNlbmQtbWVzc2FnZXMiLCJ2aWV3LW5vdGlmaWNhdGlvbnMiXX0.s64RXdV13FyplLzeS5T1b1opv__iAvn0r9Aft9eKRcY"
 }
 ```
 
@@ -396,6 +498,7 @@ El sistema implementa soft deletes para mantener la integridad de datos:
 {
   "success": true,
   "message": "User registered successfully",
+  "role": "patient",
   "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
 }
 ```
@@ -420,6 +523,30 @@ El sistema implementa soft deletes para mantener la integridad de datos:
 }
 ```
 
+**Error de credenciales inválidas:**
+```json
+{
+  "success": false,
+  "message": "Invalid credentials"
+}
+```
+
+**Error de token expirado:**
+```json
+{
+  "success": false,
+  "message": "Token has expired"
+}
+```
+
+**Error de usuario no encontrado:**
+```json
+{
+  "success": false,
+  "message": "User not found"
+}
+```
+
 **Usuario creado exitosamente:**
 ```json
 {
@@ -428,7 +555,7 @@ El sistema implementa soft deletes para mantener la integridad de datos:
   "data": {
     "id": 17,
     "name": "New Patient",
-    "email": "new.patient@healthsync.com",
+    "email": "new.patient@saludone.com",
     "patient": {
       "id": 7,
       "birth_date": "1985-05-15",
@@ -572,14 +699,42 @@ curl -X GET http://127.0.0.1:8000/api/medical-records/1/files/1 \
 ---
 
 ## Paquetes en uso
-- Tymon JWT Auth: autenticación JWT para APIs
+- **Tymon JWT Auth**: autenticación JWT para APIs
   - Documentación: [`https://jwt-auth.readthedocs.io/en/develop/laravel-installation/`](https://jwt-auth.readthedocs.io/en/develop/laravel-installation/)
-- Dedoc Scramble: generación automática de documentación OpenAPI (Swagger) para Laravel
+- **Dedoc Scramble**: generación automática de documentación OpenAPI (Swagger) para Laravel
   - Documentación: [`https://scramble.dedoc.co/`](https://scramble.dedoc.co/)
-- Spatie Permission: gestión de roles y permisos
+- **Spatie Permission**: gestión de roles y permisos
   - Documentación: [`https://spatie.be/docs/laravel-permission/v5/introduction`](https://spatie.be/docs/laravel-permission/v5/introduction)
-- Laravel Socialite: autenticación OAuth con Google
+- **Laravel Socialite**: autenticación OAuth con Google
   - Documentación: [`https://laravel.com/docs/socialite`](https://laravel.com/docs/socialite)
+- **Google API Client**: integración con Google Calendar API
+  - Documentación: [`https://developers.google.com/calendar/api`](https://developers.google.com/calendar/api)
+- **Laravel Mail**: sistema de notificaciones por email
+  - Documentación: [`https://laravel.com/docs/mail`](https://laravel.com/docs/mail)
+- **Laravel Queue**: procesamiento asíncrono de tareas
+  - Documentación: [`https://laravel.com/docs/queues`](https://laravel.com/docs/queues)
+
+### **Nuevas Funcionalidades Implementadas**
+
+#### **Sistema de Citas Médicas**
+- **Algoritmo de asignación automática**: Scoring inteligente basado en carga de trabajo, experiencia y disponibilidad
+- **Lista de espera**: Gestión automática cuando no hay doctores disponibles
+- **Sincronización con Google Calendar**: Creación, actualización y eliminación automática de eventos
+- **Teleconsulta con Google Meet**: Enlaces generados automáticamente para citas virtuales
+- **Gestión de disponibilidad**: Horarios flexibles por doctor con restricciones específicas
+- **Recordatorios automáticos**: Emails personalizados para doctores y pacientes
+
+#### **Integración Google Calendar**
+- **OAuth 2.0**: Autenticación segura con Google
+- **Renovación automática de tokens**: Gestión transparente de credenciales
+- **Controlador independiente**: API para gestión directa de eventos
+- **Comandos Artisan**: `google:check-token` y `google:refresh-token`
+
+#### **Servicios Especializados**
+- **AppointmentAssignmentService**: Lógica de asignación y disponibilidad
+- **AppointmentCalendarService**: Sincronización con Google Calendar
+- **GoogleCalendarService**: Interfaz con Google Calendar API
+- **Jobs asíncronos**: Procesamiento en background de tareas pesadas
 
 Nota: Más adelante se integrará Reverb para websockets/tiempo real.
 
@@ -591,12 +746,12 @@ Requisitos: PHP 8.2+, Composer, SQLite (por defecto) u otro driver soportado por
 1) Clonar e instalar dependencias
 ```bash
 # HTTPS
-git clone https://github.com/fer-gc05/HealthSync-API.git
+git clone https://github.com/fer-gc05/SaludOne-API.git
 
 # SSH
-git clone git@github.com:fer-gc05/HealthSync-API.git
+git clone git@github.com:fer-gc05/SaludOne-API.git
 
-cd HealthSync-API
+cd SaludOne-API
 composer install
 ```
 
@@ -624,18 +779,18 @@ Esto ejecutará automáticamente:
 - `AdminUserSeeder` - Crea usuarios administradores
 
 **Usuarios administradores creados:**
-- Fernando Gil (fernando.gil@healthsync.com)
-- Franco Maidana (franco.maidana@healthsync.com)
-- Sebastian Lemus (sebastian.lemus@healthsync.com)
+- Fernando Gil (fernando.gil@saludone.com)
+- Franco Maidana (franco.maidana@saludone.com)
+- Sebastian Lemus (sebastian.lemus@saludone.com)
 
 **Contraseña por defecto:** `admin123`
 
 **Personal médico creado:**
-- Dr. Juan Pérez (juan.perez@healthsync.com)
-- Dra. María García (maria.garcia@healthsync.com)
-- Dr. Carlos López (carlos.lopez@healthsync.com)
-- Dra. Ana Martínez (ana.martinez@healthsync.com)
-- Dr. Roberto Silva (roberto.silva@healthsync.com)
+- Dr. Juan Pérez (juan.perez@saludone.com)
+- Dra. María García (maria.garcia@saludone.com)
+- Dr. Carlos López (carlos.lopez@saludone.com)
+- Dra. Ana Martínez (ana.martinez@saludone.com)
+- Dr. Roberto Silva (roberto.silva@saludone.com)
 
 **Pacientes de prueba creados:**
 - Paciente Test 1 (paciente1@test.com)
@@ -669,7 +824,7 @@ La API estará disponible en: `http://127.0.0.1:8000`
 curl -X POST http://127.0.0.1:8000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "fernando.gil@healthsync.com",
+    "email": "fernando.gil@saludone.com",
     "password": "admin123"
   }'
 
@@ -677,7 +832,7 @@ curl -X POST http://127.0.0.1:8000/api/auth/login \
 curl -X POST http://127.0.0.1:8000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "juan.perez@healthsync.com",
+    "email": "juan.perez@saludone.com",
     "password": "password123"
   }'
 
@@ -797,7 +952,7 @@ curl -X GET http://127.0.0.1:8000/api/admin/users/trashed \
 curl -X POST http://127.0.0.1:8000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "juan.perez@healthsync.com",
+    "email": "juan.perez@saludone.com",
     "password": "password123"
   }'
 
@@ -919,6 +1074,151 @@ curl -X GET http://127.0.0.1:8000/api/medical-records \
   -H "Authorization: Bearer {patient_token}"
 ```
 
+### **Probar Sistema de Citas Médicas**
+
+#### **Crear Cita como Paciente**
+```bash
+# Login como paciente
+curl -X POST http://127.0.0.1:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "maria.gonzalez@email.com",
+    "password": "password123"
+  }'
+
+# Crear cita virtual
+curl -X POST http://127.0.0.1:8000/api/patient/appointments/book \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {patient_token}" \
+  -d '{
+    "medical_staff_id": 1,
+    "specialty_id": 1,
+    "start_date": "2025-11-20T10:00:00.000000Z",
+    "end_date": "2025-11-20T11:00:00.000000Z",
+    "type": "virtual",
+    "reason": "Consulta de rutina",
+    "urgent": false,
+    "priority": 1
+  }'
+
+# Ver horarios disponibles
+curl -X GET "http://127.0.0.1:8000/api/patient/appointments/available-slots?specialty_id=1&date=2025-11-20&type=presencial" \
+  -H "Authorization: Bearer {patient_token}"
+
+# Obtener enlace de teleconsulta
+curl -X GET http://127.0.0.1:8000/api/patient/appointments/{appointment_id}/teleconsultation-link \
+  -H "Authorization: Bearer {patient_token}"
+```
+
+#### **Gestionar Citas como Doctor**
+```bash
+# Login como doctor
+curl -X POST http://127.0.0.1:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "juan.perez@saludone.com",
+    "password": "password123"
+  }'
+
+# Ver mis citas
+curl -X GET http://127.0.0.1:8000/api/doctor/appointments \
+  -H "Authorization: Bearer {doctor_token}"
+
+# Ver citas de hoy
+curl -X GET http://127.0.0.1:8000/api/doctor/appointments/today \
+  -H "Authorization: Bearer {doctor_token}"
+
+# Programar nueva cita
+curl -X POST http://127.0.0.1:8000/api/doctor/appointments/schedule \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {doctor_token}" \
+  -d '{
+    "patient_id": 1,
+    "specialty_id": 1,
+    "start_date": "2025-11-21T14:00:00.000000Z",
+    "end_date": "2025-11-21T15:00:00.000000Z",
+    "type": "presencial",
+    "reason": "Seguimiento médico"
+  }'
+
+# Actualizar disponibilidad
+curl -X PUT http://127.0.0.1:8000/api/doctor/appointments/availability \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {doctor_token}" \
+  -d '{
+    "day_of_week": "monday",
+    "start_time": "09:00",
+    "end_time": "17:00",
+    "is_available": true,
+    "max_appointments": 20
+  }'
+```
+
+#### **Gestionar Citas como Admin**
+```bash
+# Login como admin
+curl -X POST http://127.0.0.1:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "fernando.gil@saludone.com",
+    "password": "admin123"
+  }'
+
+# Ver todas las citas
+curl -X GET http://127.0.0.1:8000/api/admin/appointments \
+  -H "Authorization: Bearer {admin_token}"
+
+# Crear cita administrativa
+curl -X POST http://127.0.0.1:8000/api/admin/appointments \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {admin_token}" \
+  -d '{
+    "patient_id": 1,
+    "medical_staff_id": 1,
+    "specialty_id": 1,
+    "start_date": "2025-11-22T10:00:00.000000Z",
+    "end_date": "2025-11-22T11:00:00.000000Z",
+    "type": "virtual",
+    "status": "programada",
+    "reason": "Cita administrativa"
+  }'
+
+# Ver estadísticas
+curl -X GET http://127.0.0.1:8000/api/admin/appointments/stats \
+  -H "Authorization: Bearer {admin_token}"
+
+# Sincronizar con Google Calendar
+curl -X POST http://127.0.0.1:8000/api/admin/appointments/{appointment_id}/sync-google \
+  -H "Authorization: Bearer {admin_token}"
+```
+
+#### **Probar Google Calendar Independiente**
+```bash
+# Autenticación OAuth (abrir en navegador)
+# http://127.0.0.1:8000/api/calendar/auth/google
+
+# Crear evento
+curl -X POST http://127.0.0.1:8000/api/calendar/events \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {admin_token}" \
+  -d '{
+    "summary": "Reunión de equipo",
+    "description": "Reunión semanal del equipo médico",
+    "start": "2025-11-25T10:00:00.000000Z",
+    "end": "2025-11-25T11:00:00.000000Z",
+    "attendees": ["doctor@saludone.com", "admin@saludone.com"],
+    "virtual": true
+  }'
+
+# Listar eventos
+curl -X GET http://127.0.0.1:8000/api/calendar/events \
+  -H "Authorization: Bearer {admin_token}"
+
+# Eliminar evento
+curl -X DELETE http://127.0.0.1:8000/api/calendar/events/{event_id} \
+  -H "Authorization: Bearer {admin_token}"
+```
+
 ---
 
 ## Roadmap funcional
@@ -934,12 +1234,19 @@ curl -X GET http://127.0.0.1:8000/api/medical-records \
 - **Validaciones médicas complejas** (signos vitales, prescripciones)
 - **Permisos granulares por rol** (doctores, pacientes, administradores)
 - **Soft deletes** (eliminación lógica con restauración)
+- **Sistema completo de gestión de citas médicas** (CRUD para todos los roles)
+- **Algoritmo inteligente de asignación automática de doctores** (con scoring)
+- **Sistema de lista de espera** (para citas sin disponibilidad inmediata)
+- **Integración completa con Google Calendar** (sincronización bidireccional)
+- **Teleconsulta automática con Google Meet** (enlaces generados automáticamente)
+- **Gestión de disponibilidad de doctores** (horarios y restricciones)
+- **Recordatorios automáticos por email** (templates personalizados)
+- **Controlador independiente de Google Calendar** (gestión de eventos)
+- **Comandos Artisan para gestión de tokens** (renovación automática)
 
 ### 🚧 **EN PROGRESO**
-- Gestión de citas con disponibilidad en tiempo real
-- Recordatorios automáticos (correo/SMS)
-- Teleconsulta con video y chat seguro
 - Integración EHR (FHIR) lectura/escritura
+- Notificaciones push y SMS
 
 ### 📋 **PLANIFICADO**
 - Asignación de citas según prioridad médica

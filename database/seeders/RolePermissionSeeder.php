@@ -16,11 +16,11 @@ class RolePermissionSeeder extends Seeder
      */
     public function run(): void
     {
-        
-        // Create roles
-        $adminRole = Role::create(['name' => 'admin']);   // Admin
-        $doctorRole = Role::create(['name' => 'doctor']); // Doctor
-        $patientRole = Role::create(['name' => 'patient']); // Patient
+
+        // Create roles (skip if already exists)
+        $adminRole = Role::firstOrCreate(['name' => 'admin']);   // Admin
+        $doctorRole = Role::firstOrCreate(['name' => 'doctor']); // Doctor
+        $patientRole = Role::firstOrCreate(['name' => 'patient']); // Patient
 
 
         // Define permissions
@@ -29,49 +29,100 @@ class RolePermissionSeeder extends Seeder
             'manage-users',
             'manage-doctors',
             'manage-patients',
+            'manage-specialties',
+            'manage-appointments',
+            'manage-medical-records',
             'view-reports',
+            'view-analytics',
             'manage-system',
+            'manage-notifications',
+            'view-all-appointments',
+            'cancel-any-appointment',
+            'assign-appointments',
 
             // Doctor permissions
             'view-patients',
+            'view-patient-details',
             'create-appointments',
             'update-appointments',
+            'cancel-appointments',
             'view-medical-records',
+            'create-medical-records',
+            'update-medical-records',
+            'view-own-appointments',
+            'manage-availability',
+            'view-patient-history',
+            'prescribe-medications',
+            'request-tests',
 
             // Patient permissions
             'view-own-profile',
+            'update-own-profile',
             'view-own-appointments',
-            'view-own-medical-records'
+            'create-appointments',
+            'cancel-own-appointments',
+            'view-own-medical-records',
+            'view-own-prescriptions',
+            'view-own-test-results',
+            'send-messages',
+            'view-notifications'
         ];
 
-        // Create permissions
+        // Create permissions (skip if already exists)
         foreach ($permissions as $permission) {
-            Permission::create(['name' => $permission]);
+            Permission::firstOrCreate(['name' => $permission]);
         }
 
-        // Assign permissions
-        $adminRole->givePermissionTo([
-            // Admin has all permissions
+        // Assign permissions (sync to avoid duplicates)
+        $adminPermissions = [
             'manage-users',
             'manage-doctors',
             'manage-patients',
+            'manage-specialties',
+            'manage-appointments',
+            'manage-medical-records',
             'view-reports',
-            'manage-system'
-        ]);
+            'view-analytics',
+            'manage-system',
+            'manage-notifications',
+            'view-all-appointments',
+            'cancel-any-appointment',
+            'assign-appointments'
+        ];
 
-        $doctorRole->givePermissionTo([
+        $doctorPermissions = [
             'view-patients',
+            'view-patient-details',
             'create-appointments',
             'update-appointments',
-            'view-medical-records'
-        ]);
-
-        $patientRole->givePermissionTo([
-            'view-own-profile',
-            'create-appointments',
+            'cancel-appointments',
+            'view-medical-records',
+            'create-medical-records',
+            'update-medical-records',
             'view-own-appointments',
-            'view-own-medical-records'
-        ]);
+            'manage-availability',
+            'view-patient-history',
+            'prescribe-medications',
+            'request-tests'
+        ];
+
+        $patientPermissions = [
+            'view-own-profile',
+            'update-own-profile',
+            'view-own-appointments',
+            'create-appointments',
+            'cancel-own-appointments',
+            'view-own-medical-records',
+            'view-own-prescriptions',
+            'view-own-test-results',
+            'send-messages',
+            'view-notifications'
+        ];
+
+        // Sync permissions (removes old ones and adds new ones)
+        $adminRole->syncPermissions($adminPermissions);
+        $doctorRole->syncPermissions($doctorPermissions);
+        $patientRole->syncPermissions($patientPermissions);
 
 
         echo "Roles and permissions seeded successfully!";

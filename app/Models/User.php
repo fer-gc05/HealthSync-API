@@ -30,6 +30,8 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         'google_token',
         'google_refresh_token',
         'google_token_expires_at',
+        'google_calendar_token',
+        'google_calendar_token_expires_at',
     ];
 
     /**
@@ -148,7 +150,7 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
     /**
      * Google OAuth Helper Methods
      */
-    
+
     /**
      * Verificar si el usuario tiene una cuenta Google vinculada
      */
@@ -165,7 +167,7 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         if (!$this->google_token_expires_at) {
             return true;
         }
-        
+
         return $this->google_token_expires_at->isPast();
     }
 

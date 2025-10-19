@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Modelo para el personal médico
- * 
+ *
  * @property int $id
  * @property int $user_id
  * @property string $professional_license
@@ -20,11 +20,13 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property array|null $work_schedule
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
- * 
+ *
  */
 class MedicalStaff extends Model
 {
     use SoftDeletes;
+
+    protected $table = 'medical_staff';
     /**
      * The attributes that are mass assignable.
      *
@@ -84,6 +86,15 @@ class MedicalStaff extends Model
     public function medicalRecords(): HasMany
     {
         return $this->hasMany(MedicalRecord::class);
+    }
+
+    /**
+     * Relación con la disponibilidad
+     * Un personal médico puede tener muchas disponibilidades
+     */
+    public function availability(): HasMany
+    {
+        return $this->hasMany(DoctorAvailability::class);
     }
 
     /**

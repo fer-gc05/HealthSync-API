@@ -26,32 +26,36 @@ class AdminUserSeeder extends Seeder
         $adminUsers = [
             [
                 'name' => 'Fernando Gil',
-                'email' => 'fernando.gil@healthsync.com',
+                'email' => 'fernando.gil@saludone.com',
                 'password' => Hash::make('admin123'),
+                'email_verified_at' => now(),
             ],
             [
                 'name' => 'Franco Maidana',
-                'email' => 'franco.maidana@healthsync.com',
+                'email' => 'franco.maidana@saludone.com',
                 'password' => Hash::make('admin123'),
+                'email_verified_at' => now(),
             ],
             [
                 'name' => 'Sebastian Lemus',
-                'email' => 'sebastian.lemus@healthsync.com',
+                'email' => 'sebastian.lemus@saludone.com',
                 'password' => Hash::make('admin123'),
+                'email_verified_at' => now(),
             ],
         ];
 
         foreach ($adminUsers as $userData) {
-            // Check if user already exists
-            $existingUser = User::where('email', $userData['email'])->first();
-            
-            if (!$existingUser) {
-                $user = User::create($userData);
+            $user = User::firstOrCreate(
+                ['email' => $userData['email']],
+                $userData
+            );
+
+            // Assign role if not already assigned
+            if (!$user->hasRole($adminRole)) {
                 $user->assignRole($adminRole);
-                
-                $this->command->info("Created admin user: {$user->name} ({$user->email})");
+                $this->command->info("Assigned admin role to: {$user->name} ({$user->email})");
             } else {
-                $this->command->warn("User already exists: {$userData['email']}");
+                $this->command->warn("User already has admin role: {$userData['email']}");
             }
         }
 

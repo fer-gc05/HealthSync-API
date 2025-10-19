@@ -64,6 +64,7 @@ class AuthController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Login successful',
+                'role' => JWTAuth::user()->getRoleNames()->first(),
                 'token' => $token,
             ], Response::HTTP_OK);
         } catch (\Exception $e) {

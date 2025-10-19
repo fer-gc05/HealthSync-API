@@ -1,10 +1,11 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Symfony\Component\HttpFoundation\Response;
 
 Route::get('/', function () {
-    return [
-        'name' => 'HealthSync API - Portal de Coordinación de Citas y Teleasistencia',
+    return response()->json([
+        'name' => 'SaludOne API - Portal de Coordinación de Citas y Teleasistencia',
         'description' => 'Sistema integral de gestión médica para clínicas y centros de salud',
         'version' => 'v1.0',
         'sector' => 'HealthTech',
@@ -18,7 +19,10 @@ Route::get('/', function () {
             'Integración con sistemas EHR (FHIR)'
         ],
         'status' => 'active',
-        'documentation ui' => url('/docs/v1/api'),
-        'documentation json' => url('/docs/v1/openapi.json')
-    ];
+        'health' => url('/api/health'),
+        'ducumentation' => [
+            'documentation ui' => url('/docs/v1/api'),
+            'documentation json' => url('/docs/v1/openapi.json')
+        ],
+    ], Response::HTTP_OK);
 });
