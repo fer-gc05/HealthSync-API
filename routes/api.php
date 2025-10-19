@@ -88,12 +88,30 @@ Route::middleware(['auth:api', 'role:admin'])->prefix('admin')->group(function (
     // Rutas administrativas para registros médicos
     Route::apiResource('medical-records', AdminMedicalRecordController::class);
     Route::get('medical-records/{medical_record}/audit', [AdminMedicalRecordController::class, 'audit']);
+
+    // Notificaciones - Admin
+    Route::get('notifications', [AdminNotificationController::class, 'index']);
+    Route::post('notifications', [AdminNotificationController::class, 'store']);
+    Route::get('notifications/{notification}', [AdminNotificationController::class, 'show'])->whereNumber('notification');
+    Route::put('notifications/{notification}', [AdminNotificationController::class, 'update'])->whereNumber('notification');
+    Route::delete('notifications/{notification}', [AdminNotificationController::class, 'destroy'])->whereNumber('notification');
+    Route::post('notifications/{notification}/read', [AdminNotificationController::class, 'markRead'])->whereNumber('notification');
+    Route::post('notifications/{notification}/unread', [AdminNotificationController::class, 'markUnread'])->whereNumber('notification');
+    Route::post('notifications/send-to-role', [AdminNotificationController::class, 'sendToRole']);
+    Route::post('notifications/send-to-users', [AdminNotificationController::class, 'sendToUsers']);
+    Route::get('notifications/stats', [AdminNotificationController::class, 'stats']);
 });
 
 // Rutas para pacientes - registros médicos (deben ir primero para evitar conflictos)
 Route::middleware(['auth:api', 'role:patient', 'verified'])->group(function () {
     Route::get('medical-records', [PatientMedicalRecordController::class, 'index']);
     Route::get('medical-records/{medical_record}', [PatientMedicalRecordController::class, 'show']);
+
+    // Notificaciones - Paciente
+    Route::get('patient/notifications', [PatientNotificationController::class, 'index']);
+    Route::get('patient/notifications/{notification}', [PatientNotificationController::class, 'show'])->whereNumber('notification');
+    Route::post('patient/notifications/{notification}/read', [PatientNotificationController::class, 'markRead'])->whereNumber('notification');
+    Route::get('patient/notifications/unread-count', [PatientNotificationController::class, 'unreadCount']);
 });
 
 // Rutas para doctores - registros médicos
@@ -102,6 +120,13 @@ Route::middleware(['auth:api', 'role:doctor', 'verified'])->group(function () {
     Route::get('medical-records/patient/{patient_id}', [DoctorMedicalRecordController::class, 'patientRecords']);
     Route::get('medical-records/{medical_record}/history', [DoctorMedicalRecordController::class, 'history']);
     Route::get('medical-records/{medical_record}/audit', [DoctorMedicalRecordController::class, 'audit']);
+
+    // Notificaciones - Doctor
+    Route::get('doctor/notifications', [DoctorNotificationController::class, 'index']);
+    Route::post('doctor/notifications/send-to-patient', [DoctorNotificationController::class, 'sendToPatient']);
+    Route::post('doctor/notifications/appointment-reminder', [DoctorNotificationController::class, 'appointmentReminder']);
+    Route::post('doctor/notifications/{notification}/read', [DoctorNotificationController::class, 'markRead'])->whereNumber('notification');
+    Route::get('doctor/notifications/unread-count', [DoctorNotificationController::class, 'unreadCount']);
 });
 
 // Rutas de archivos para registros médicos (doctores y admin)
