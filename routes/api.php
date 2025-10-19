@@ -9,16 +9,21 @@ use App\Http\Controllers\Doctor\MedicalRecordController as DoctorMedicalRecordCo
 use App\Http\Controllers\Patient\MedicalRecordController as PatientMedicalRecordController;
 use App\Http\Controllers\Admin\MedicalRecordController as AdminMedicalRecordController;
 use App\Http\Controllers\Files\MedicalRecordFileController;
+use App\Http\Controllers\Admin\AppointmentController as AdminAppointmentController;
+use App\Http\Controllers\Doctor\AppointmentController as DoctorAppointmentController;
+use App\Http\Controllers\Patient\AppointmentController as PatientAppointmentController;
+use App\Http\Controllers\System\HealthController;
+use App\Http\Controllers\Calendar\GoogleCalendarController;
 use Illuminate\Support\Facades\Route;
 
 //Route::get('/user', function (Request $request) {
-    //return $request->user();
+//return $request->user();
 //})->middleware('auth:sanctum');
 
 
-Route::prefix('auth')->group(function (){
+Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register']);
-    Route::post('login', [AuthController::class,'login']);
+    Route::post('login', [AuthController::class, 'login']);
 
     // Email verification routes
     Route::post('verify-email', [EmailVerificationController::class, 'verify']);
@@ -28,7 +33,7 @@ Route::prefix('auth')->group(function (){
     Route::prefix('google')->group(function () {
         Route::get('redirect', [GoogleAuthController::class, 'redirect']);
         Route::get('callback', [GoogleAuthController::class, 'callback']);
-        
+
         Route::middleware('auth:api')->group(function () {
             Route::post('link', [GoogleAuthController::class, 'link']);
             Route::delete('unlink', [GoogleAuthController::class, 'unlink']);
@@ -36,7 +41,7 @@ Route::prefix('auth')->group(function (){
         });
     });
 
-    Route::middleware('auth:api')->group(function (){
+    Route::middleware('auth:api')->group(function () {
         Route::get('me', [AuthController::class, 'me']);
         Route::post('logout', [AuthController::class, 'logout']);
         Route::post('refresh', [AuthController::class, 'refresh']);
@@ -48,7 +53,7 @@ Route::prefix('auth')->group(function (){
 Route::middleware('auth:api')->group(function () {
     // Actualizar perfil básico del usuario autenticado
     Route::put('profile', [UsersController::class, 'updateOwnProfile']);
-    
+
     // Completar perfil de paciente para el usuario autenticado (requiere email verificado)
     Route::middleware('verified')->group(function () {
         Route::post('profile/complete/patient', [UsersController::class, 'completeOwnPatientProfile']);
@@ -69,17 +74,17 @@ Route::middleware(['auth:api', 'role:admin'])->prefix('admin')->group(function (
     Route::delete('users/{user}', [UsersController::class, 'destroy']);
     Route::post('users/{user}/restore', [UsersController::class, 'restore']);
     Route::delete('users/{user}/force', [UsersController::class, 'forceDelete']);
-    
+
     // Rutas específicas por rol para crear usuarios (admin, paciente, doctor)
     Route::post('users/admin', [UsersController::class, 'storeAdmin']);
     Route::post('users/patient', [UsersController::class, 'storePatient']);
     Route::post('users/doctor', [UsersController::class, 'storeDoctor']);
-    
+
     // Rutas específicas por rol para actualizar usuarios (admin, paciente, doctor)
     Route::put('users/{user}/admin', [UsersController::class, 'updateAdmin']);
     Route::put('users/{user}/patient', [UsersController::class, 'updatePatient']);
     Route::put('users/{user}/doctor', [UsersController::class, 'updateDoctor']);
-    
+
     // Rutas administrativas para registros médicos
     Route::apiResource('medical-records', AdminMedicalRecordController::class);
     Route::get('medical-records/{medical_record}/audit', [AdminMedicalRecordController::class, 'audit']);
@@ -106,3 +111,56 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
     Route::get('medical-records/{medical_record}/files/{file_id}', [MedicalRecordFileController::class, 'download']);
     Route::delete('medical-records/{medical_record}/files/{file_id}', [MedicalRecordFileController::class, 'destroy']);
 });
+
+Route::prefix('calendar')->group(function () {
+    Route::get('auth/google', [GoogleCalendarController::class, 'redirectToGoogle']);
+    Route::get('auth/google/callback', [GoogleCalendarController::class, 'handleGoogleCallback']);
+
+    Route::middleware(['auth:api', 'role:admin'])->group(function () {
+        Route::get('events', [GoogleCalendarController::class, 'showEvents']);
+        Route::post('events', [GoogleCalendarController::class, 'storeEvent']);
+        Route::put('events/{eventId}', [GoogleCalendarController::class, 'updateEvent']);
+        Route::delete('events/{eventId}', [GoogleCalendarController::class, 'destroyEvent']);
+    });
+
+});
+
+// Rutas de citas para administradores
+Route::middleware(['auth:api', 'role:admin', 'verified'])->prefix('admin')->group(function () {
+    Route::apiResource('appointments', AdminAppointmentController::class);
+    Route::get('appointments/stats', [AdminAppointmentController::class, 'stats']);
+    Route::get('appointments/availability', [AdminAppointmentController::class, 'availability']);
+    Route::post('appointments/{appointment}/sync-google', [AdminAppointmentController::class, 'syncWithGoogle']);
+    Route::post('appointments/assign-optimal', [AdminAppointmentController::class, 'assignOptimal']);
+});
+
+// Rutas de citas para doctores
+Route::middleware(['auth:api', 'role:doctor', 'verified'])->prefix('doctor')->group(function () {
+    Route::get('appointments', [DoctorAppointmentController::class, 'index']);
+    Route::get('appointments/today', [DoctorAppointmentController::class, 'today']);
+    Route::get('appointments/this-week', [DoctorAppointmentController::class, 'thisWeek']);
+    Route::get('appointments/availability', [DoctorAppointmentController::class, 'availability']);
+    Route::get('appointments/waitlist', [DoctorAppointmentController::class, 'waitlist']);
+    Route::post('appointments/schedule', [DoctorAppointmentController::class, 'schedule']);
+    Route::put('appointments/availability', [DoctorAppointmentController::class, 'updateAvailability']);
+    Route::get('appointments/{appointment}', [DoctorAppointmentController::class, 'show']);
+    Route::put('appointments/{appointment}', [DoctorAppointmentController::class, 'update']);
+    Route::post('appointments/{appointment}/start-teleconsultation', [DoctorAppointmentController::class, 'startTeleconsultation']);
+    Route::post('appointments/{appointment}/end-teleconsultation', [DoctorAppointmentController::class, 'endTeleconsultation']);
+});
+
+// Rutas de citas para pacientes
+Route::middleware(['auth:api', 'role:patient', 'verified'])->prefix('patient')->group(function () {
+    Route::get('appointments', [PatientAppointmentController::class, 'index']);
+    Route::post('appointments/book', [PatientAppointmentController::class, 'book']);
+    Route::put('appointments/{appointment}/reschedule', [PatientAppointmentController::class, 'reschedule']);
+    Route::post('appointments/{appointment}/cancel', [PatientAppointmentController::class, 'cancel']);
+    Route::get('appointments/{appointment}/teleconsultation-link', [PatientAppointmentController::class, 'getTeleconsultationLink']);
+    Route::get('appointments/available-slots', [PatientAppointmentController::class, 'availableSlots']);
+    Route::get('appointments/available-doctors', [PatientAppointmentController::class, 'availableDoctors']);
+    Route::get('appointments/upcoming', [PatientAppointmentController::class, 'upcoming']);
+    Route::get('appointments/history', [PatientAppointmentController::class, 'history']);
+});
+
+// Health check endpoint
+Route::get('/health', [HealthController::class, 'index']);
