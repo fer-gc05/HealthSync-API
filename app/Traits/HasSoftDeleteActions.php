@@ -14,15 +14,17 @@ trait HasSoftDeleteActions
      * Elimina lógicamente un registro del sistema sin borrarlo permanentemente.
      * El registro puede ser restaurado posteriormente mediante el endpoint de restauración.
      *
-     * @param Model $model Modelo a eliminar (inyección automática de Laravel)
+     * @param int $id ID del registro a eliminar
      * @return JsonResponse Confirmación de eliminación exitosa o error
      *
      * @response array{success: bool, message: string}
      * @response 500 array{success: bool, message: string, errors: string}
      */
-    public function destroy(Model $model): JsonResponse
+    public function destroy(int $id): JsonResponse
     {
         try {
+            $modelClass = $this->getModelClass();
+            $model = $modelClass::findOrFail($id);
             $model->delete();
 
             return response()->json([
@@ -48,13 +50,35 @@ trait HasSoftDeleteActions
      * @return JsonResponse Registro restaurado con sus datos completos o error
      *
      * @response array{success: bool, message: string, data: object}
+     * @response 400 array{success: bool, message: string}
+     * @response 404 array{success: bool, message: string}
      * @response 500 array{success: bool, message: string, errors: string}
      */
     public function restore(int $id): JsonResponse
     {
         try {
             $modelClass = $this->getModelClass();
-            $model = $modelClass::withTrashed()->findOrFail($id);
+
+            // Buscar solo entre registros eliminados
+            $model = $modelClass::onlyTrashed()->find($id);
+
+            if (!$model) {
+                // Verificar si existe pero no está eliminado
+                $existingModel = $modelClass::find($id);
+
+                if ($existingModel) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $this->getEntityName() . ' is not deleted and cannot be restored.'
+                    ], 400);
+                }
+
+                return response()->json([
+                    'success' => false,
+                    'message' => $this->getEntityName() . ' not found.'
+                ], 404);
+            }
+
             $model->restore();
 
             return response()->json([
@@ -82,13 +106,22 @@ trait HasSoftDeleteActions
      * @return JsonResponse Confirmación de eliminación permanente o error
      *
      * @response array{success: bool, message: string}
+     * @response 404 array{success: bool, message: string}
      * @response 500 array{success: bool, message: string, errors: string}
      */
     public function forceDestroy(int $id): JsonResponse
     {
         try {
             $modelClass = $this->getModelClass();
-            $model = $modelClass::withTrashed()->findOrFail($id);
+            $model = $modelClass::withTrashed()->find($id);
+
+            if (!$model) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $this->getEntityName() . ' not found.'
+                ], 404);
+            }
+
             $model->forceDelete();
 
             return response()->json([
@@ -105,5 +138,6 @@ trait HasSoftDeleteActions
     }
 
     abstract protected function getModelClass(): string;
+
     abstract protected function getEntityName(): string;
 }
