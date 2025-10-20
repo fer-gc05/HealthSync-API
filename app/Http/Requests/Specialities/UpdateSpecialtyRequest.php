@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Requests\Admin\Specialities;
+namespace App\Http\Requests\Specialities;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class StoreSpecialtyRequest extends FormRequest
+class UpdateSpecialtyRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -21,32 +21,27 @@ class StoreSpecialtyRequest extends FormRequest
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
 
-    /**
-     * Obtener los mensajes de error personalizados para las reglas de validación
-     *
-     * Proporciona mensajes más descriptivos cuando la validación falla,
-     * ayudando al usuario a entender qué datos son requeridos.
-     */
-
     public function rules(): array
     {
+        $specialtyId = $this->route('specialty');
+
         return [
             'name' => [
-                'required',
+                'sometimes',
                 'string',
                 'max:100',
                 Rule::unique('specialties', 'name')
+                    ->ignore($specialtyId)
                     ->whereNull('deleted_at')
             ],
-            'description' => 'nullable|string|max:255',
-            'active' => 'boolean',
+            'description' => 'sometimes|nullable|string|max:255',
+            'active' => 'sometimes|boolean',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'name.required' => 'The specialty name is required.',
             'name.unique' => 'A specialty with this name already exists.',
             'name.max' => 'The name cannot exceed 100 characters.',
             'description.max' => 'The description cannot exceed 255 characters.',
