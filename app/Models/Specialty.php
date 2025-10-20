@@ -65,4 +65,20 @@ class Specialty extends Model
     {
         return $query->where('active', true);
     }
+
+    /**
+     * Scope para incluir especialidades eliminadas
+     */
+    public function scopeWithTrashed($query)
+    {
+        return $query->withTrashed();
+    }
+
+    /**
+     * Scope para obtener SOLO especialidades eliminadas
+     */
+    public function scopeOnlyTrashed($query)
+    {
+        return $query->onlyTrashed();
+    }
 }

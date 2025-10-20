@@ -18,6 +18,7 @@ use App\Http\Controllers\Doctor\NotificationController as DoctorNotificationCont
 use App\Http\Controllers\System\HealthController;
 use App\Http\Controllers\Calendar\GoogleCalendarController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\SpecialtyController;
 
 //Route::get('/user', function (Request $request) {
 //return $request->user();
@@ -103,6 +104,9 @@ Route::middleware(['auth:api', 'role:admin'])->prefix('admin')->group(function (
     Route::post('notifications/send-to-role', [AdminNotificationController::class, 'sendToRole']);
     Route::post('notifications/send-to-users', [AdminNotificationController::class, 'sendToUsers']);
     Route::get('notifications/stats', [AdminNotificationController::class, 'stats']);
+
+    // Especialidades - Admin
+    Route::apiResource('specialties', SpecialtyController::class);
 });
 
 // Rutas para pacientes - registros médicos (deben ir primero para evitar conflictos)
