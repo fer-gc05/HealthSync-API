@@ -50,6 +50,10 @@ Problema actual: muchos sistemas son fragmentados, duplican datos y generan erro
 - **✅ Sincronización bidireccional con Google Calendar**
 - **✅ Controlador independiente de Google Calendar**
 - **✅ Comandos Artisan para gestión de tokens de Google**
+- **✅ CRUD completo de especialidades médicas**
+- **✅ Sistema de filtros avanzados para especialidades**
+- **✅ Soft Deletes y restauración de especialidades**
+- **✅ Rutas públicas y protegidas para especialidades**
 - Documentación OpenAPI generada automáticamente con Scramble
 - Rutas públicas de estado y enlaces a documentación en `routes/web.php`
 
@@ -228,6 +232,33 @@ GET    /api/medical-records/{id}/files         - Listar archivos del registro
 GET    /api/medical-records/{id}/files/{file_id} - Descargar archivo
 DELETE /api/medical-records/{id}/files/{file_id} - Eliminar archivo
 ```
+
+### **Especialidades Médicas**
+
+#### **Rutas Públicas (Sin autenticación)**
+```
+GET    /api/specialties              - Listar especialidades activas (con filtros básicos)
+GET    /api/specialties/{id}         - Ver detalle de especialidad
+```
+
+#### **Rutas Admin (Requiere rol: admin)**
+```
+POST   /api/admin/specialties        - Crear especialidad
+PUT    /api/admin/specialties/{id}   - Actualizar especialidad
+DELETE /api/admin/specialties/{id}   - Eliminar especialidad (soft delete)
+POST   /api/admin/specialties/{id}/restore - Restaurar especialidad eliminada
+DELETE /api/admin/specialties/{id}/force - Eliminar permanentemente
+```
+
+**Filtros disponibles para admin en listado:**
+- `q` (string): Búsqueda por nombre y descripción
+- `active` (boolean): Filtrar por activas/inactivas
+- `with_trashed` (boolean): Incluir eliminadas
+- `only_trashed` (boolean): Solo eliminadas
+- `sort_by` (string): Campo de ordenamiento (name, created_at, updated_at)
+- `sort_dir` (string): Dirección (asc/desc)
+- `per_page` (integer): Resultados por página (1-100, default: 10)
+- `page` (integer): Número de página
 
 > **Nota:** La ruta `GET /api/admin/users` está duplicada en el código (líneas 38 y 43) pero ambas apuntan a controladores diferentes. La primera usa `UserRoleController::users` y la segunda usa `UsersController::index`. Laravel usará la primera definición.
 
@@ -462,6 +493,34 @@ El sistema implementa soft deletes para mantener la integridad de datos:
 ```
 
 ### **Ejemplos de Respuestas Reales**
+
+## 🧪 Tests Implementados
+
+### **Especialidades Médicas (15 tests pasados)**
+```
+✓ admin_puede_crear_especialidad
+✓ no_puede_crear_especialidad_con_nombre_duplicado
+✓ admin_puede_actualizar_especialidad
+✓ admin_puede_ver_detalles_de_especialidad
+✓ admin_puede_eliminar_especialidad
+✓ admin_puede_restaurar_especialidad
+✓ admin_puede_eliminar_permanentemente_especialidad
+✓ usuarios_publicos_solo_ven_especialidades_activas
+✓ admin_puede_ver_todas_las_especialidades_incluyendo_eliminadas
+✓ admin_puede_filtrar_por_especialidades_activas
+✓ admin_puede_filtrar_solo_especialidades_eliminadas
+✓ puede_buscar_especialidades_por_nombre
+✓ puede_buscar_especialidades_por_descripcion
+✓ puede_ordenar_especialidades
+✓ respeta_paginacion_personalizada
+```
+
+**Ejecutar tests:**
+```bash
+php artisan test --filter=SpecialtyTest
+```
+
+---
 
 **Login exitoso (Admin):**
 ```json
