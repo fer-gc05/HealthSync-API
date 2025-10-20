@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -18,7 +19,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class Specialty extends Model
 {
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -64,5 +65,21 @@ class Specialty extends Model
     public function scopeActive($query)
     {
         return $query->where('active', true);
+    }
+
+    /**
+     * Scope para incluir especialidades eliminadas
+     */
+    public function scopeWithTrashed($query)
+    {
+        return $query->withTrashed();
+    }
+
+    /**
+     * Scope para obtener SOLO especialidades eliminadas
+     */
+    public function scopeOnlyTrashed($query)
+    {
+        return $query->onlyTrashed();
     }
 }

@@ -18,6 +18,7 @@ use App\Http\Controllers\Doctor\NotificationController as DoctorNotificationCont
 use App\Http\Controllers\System\HealthController;
 use App\Http\Controllers\Calendar\GoogleCalendarController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\SpecialtyController;
 
 //Route::get('/user', function (Request $request) {
 //return $request->user();
@@ -192,3 +193,20 @@ Route::middleware(['auth:api', 'role:patient', 'verified'])->prefix('patient')->
 
 // Health check endpoint
 Route::get('/health', [HealthController::class, 'index']);
+
+
+// Especialidades
+// Rutas públicas (solo lectura)
+Route::prefix('specialties')->group(function () {
+    Route::get('/', [SpecialtyController::class, 'index']);
+    Route::get('/{specialty}', [SpecialtyController::class, 'show']);
+});
+
+// Rutas administrativas (escritura)
+Route::middleware(['auth:api', 'role:admin'])->prefix('admin/specialties')->group(function () {
+    Route::post('/', [SpecialtyController::class, 'store']);
+    Route::put('/{specialty}', [SpecialtyController::class, 'update']);
+    Route::delete('/{id}', [SpecialtyController::class, 'destroy'])->whereNumber('id');
+    Route::post('/{id}/restore', [SpecialtyController::class, 'restore'])->whereNumber('id');
+    Route::delete('/{id}/force', [SpecialtyController::class, 'forceDestroy'])->whereNumber('id');
+});
