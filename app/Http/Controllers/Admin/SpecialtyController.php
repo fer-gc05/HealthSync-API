@@ -3,17 +3,18 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\Specialities\StoreSpecialtyRequest;
-use App\Http\Requests\Admin\Specialities\UpdateSpecialtyRequest;
+use App\Http\Requests\Specialities\StoreSpecialtyRequest;
+use App\Http\Requests\Specialities\UpdateSpecialtyRequest;
 use App\Models\Specialty;
 use App\Traits\HasSoftDeleteActions;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Http\Requests\Specialities\IndexSpecialtyRequest;
 
 /**
- * @tags Especialidades (Admin)
+ * @tags Especialidades
  */
 class SpecialtyController extends Controller
 {
@@ -22,38 +23,81 @@ class SpecialtyController extends Controller
     /**
      * Listar especialidades
      *
-     * Obtiene un listado resumido de todas las especialidades médicas registradas en el sistema.
-     * Solo devuelve campos esenciales para mostrar en tablas o selectores.
-     * Para obtener información completa use el endpoint de detalle individual.
+     * Obtiene un listado paginado de especialidades médicas del sistema con capacidades de búsqueda y filtrado.
+     * - Usuarios públicos: Solo especialidades activas y no eliminadas
+     * - Administradores: Pueden filtrar por estado (activas/inactivas) e incluir/filtrar eliminadas
      *
-     * @param Request $request Parámetros de filtrado opcionales
-     * @return JsonResponse Lista resumida de especialidades o error
+     * @param Request $request Parámetros de filtrado, búsqueda y paginación
+     * @return JsonResponse Lista paginada de especialidades o error
      *
-     * @response array{success: bool, data: array{id: int, name: string, active: bool}[]}
+     * @response array{success: bool, data: Specialty[],current_page: int, last_page: int, per_page: int, total: int,next_page_url: string|null, prev_page_url: string|null,path: string, from: int|null, to: int|null,...}
      *
-     * Filtros disponibles:
+     * Parámetros disponibles:
+     * - q: Término de búsqueda (busca en name y description)
+     * - sort_by: Campo para ordenar (name, created_at, updated_at) - default: created_at
+     * - sort_dir: Dirección del ordenamiento (asc, desc) - default: desc
+     * - per_page: Cantidad de resultados por página (1-100) - default: 15
+     * - page: Número de página actual
+     *
+     * Filtros exclusivos para admin:
      * - active: Filtrar por especialidades activas (true) o inactivas (false)
      * - with_trashed: Incluir especialidades eliminadas en los resultados (true/false)
+     * - only_trashed: Mostrar solo especialidades eliminadas (true/false)
      */
-    public function index(Request $request): JsonResponse
+    public function index(IndexSpecialtyRequest $request): JsonResponse
     {
         try {
             $query = Specialty::query();
 
-            if ($request->has('active')) {
-                $query->where('active', $request->boolean('active'));
+            // Búsqueda por término (disponible para todos)
+            if ($request->filled('q')) {
+                $searchTerm = $request->input('q');
+                $query->where(function ($q) use ($searchTerm) {
+                    $q->where('name', 'like', "%{$searchTerm}%")
+                        ->orWhere('description', 'like', "%{$searchTerm}%");
+                });
             }
 
-            if ($request->boolean('with_trashed')) {
-                $query->withTrashed();
+            // Filtros exclusivos para admin
+            if (auth()->check() && auth()->user()->hasRole('admin')) {
+                // Filtro por estado activo/inactivo
+                if ($request->has('active')) {
+                    $query->where('active', $request->boolean('active'));
+                }
+
+                // Filtros de registros eliminados
+                if ($request->boolean('only_trashed')) {
+                    $query->onlyTrashed();
+                } elseif ($request->boolean('with_trashed')) {
+                    $query->withTrashed();
+                }
+            } else {
+                // Usuarios públicos/pacientes/doctores: solo activas y no eliminadas
+                $query->where('active', true);
             }
 
-            $specialties = $query->latest()
-                ->get(['id', 'name', 'active', 'deleted_at']);
+            // Ordenamiento
+            $sortBy = $request->input('sort_by', 'created_at');
+            $sortDir = $request->input('sort_dir', 'desc');
+
+            // Validar campos permitidos para ordenamiento
+            $allowedSortFields = ['name', 'created_at', 'updated_at'];
+            if (!in_array($sortBy, $allowedSortFields)) {
+                $sortBy = 'created_at';
+            }
+
+            // Validar dirección de ordenamiento
+            $sortDir = strtolower($sortDir) === 'asc' ? 'asc' : 'desc';
+
+            $query->orderBy($sortBy, $sortDir);
+
+            // Paginación
+            $perPage = min(max((int)$request->input('per_page', 10), 1), 100);
+            $specialties = $query->paginate($perPage);
 
             return response()->json([
                 'success' => true,
-                'data' => $specialties
+                ...$specialties->toArray()
             ], Response::HTTP_OK);
         } catch (Exception $e) {
             return response()->json([
@@ -63,6 +107,7 @@ class SpecialtyController extends Controller
             ], 500);
         }
     }
+
 
     /**
      * Crear especialidad
@@ -74,7 +119,7 @@ class SpecialtyController extends Controller
      * @param StoreSpecialtyRequest $request Datos de la especialidad a crear
      * @return JsonResponse Especialidad creada con sus datos completos o errores de validación
      *
-     * @response array{success: bool, message: string, data: \App\Models\Specialty}
+     * @response array{success: bool, message: string, data: Specialty}
      *
      * Campos requeridos:
      * - name: Nombre de la especialidad (máximo 100 caracteres, único)
@@ -112,7 +157,7 @@ class SpecialtyController extends Controller
      * @param Specialty $specialty Especialidad a mostrar (inyección automática por ID)
      * @return JsonResponse Detalles completos de la especialidad incluyendo timestamps
      *
-     * @response array{success: bool, data: \App\Models\Specialty}
+     * @response array{success: bool, data: Specialty}
      */
     public function show(Specialty $specialty): JsonResponse
     {
@@ -133,7 +178,7 @@ class SpecialtyController extends Controller
      * @param Specialty $specialty Especialidad a actualizar (inyección automática por ID)
      * @return JsonResponse Especialidad actualizada con sus datos completos o errores de validación
      *
-     * @response array{success: bool, message: string, data: \App\Models\Specialty}
+     * @response array{success: bool, message: string, data: Specialty}
      *
      * Campos actualizables:
      * - name: Nombre de la especialidad (máximo 100 caracteres, único)

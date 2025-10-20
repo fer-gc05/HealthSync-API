@@ -104,11 +104,6 @@ Route::middleware(['auth:api', 'role:admin'])->prefix('admin')->group(function (
     Route::post('notifications/send-to-role', [AdminNotificationController::class, 'sendToRole']);
     Route::post('notifications/send-to-users', [AdminNotificationController::class, 'sendToUsers']);
     Route::get('notifications/stats', [AdminNotificationController::class, 'stats']);
-
-    // Especialidades - Admin
-    Route::apiResource('specialties', SpecialtyController::class);
-    Route::post('specialties/{id}/restore', [SpecialtyController::class, 'restore'])->whereNumber('id');
-    Route::delete('specialties/{id}/force', [SpecialtyController::class, 'forceDestroy'])->whereNumber('id');
 });
 
 // Rutas para pacientes - registros médicos (deben ir primero para evitar conflictos)
@@ -198,3 +193,20 @@ Route::middleware(['auth:api', 'role:patient', 'verified'])->prefix('patient')->
 
 // Health check endpoint
 Route::get('/health', [HealthController::class, 'index']);
+
+
+// Especialidades
+// Rutas públicas (solo lectura)
+Route::prefix('specialties')->group(function () {
+    Route::get('/', [SpecialtyController::class, 'index']);
+    Route::get('/{specialty}', [SpecialtyController::class, 'show']);
+});
+
+// Rutas administrativas (escritura)
+Route::middleware(['auth:api', 'role:admin'])->prefix('admin/specialties')->group(function () {
+    Route::post('/', [SpecialtyController::class, 'store']);
+    Route::put('/{specialty}', [SpecialtyController::class, 'update']);
+    Route::delete('/{id}', [SpecialtyController::class, 'destroy'])->whereNumber('id');
+    Route::post('/{id}/restore', [SpecialtyController::class, 'restore'])->whereNumber('id');
+    Route::delete('/{id}/force', [SpecialtyController::class, 'forceDestroy'])->whereNumber('id');
+});
