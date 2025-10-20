@@ -1,0 +1,59 @@
+<?php
+
+namespace Database\Factories;
+
+use App\Models\Specialty;
+use Illuminate\Database\Eloquent\Factories\Factory;
+
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Specialty>
+ */
+class SpecialtyFactory extends Factory
+{
+    protected $model = Specialty::class;
+
+    /**
+     * Define the model's default state.
+     *
+     * @return array<string, mixed>
+     */
+    public function definition(): array
+    {
+        return [
+            'name' => fake()->unique(false)->randomElement([
+                'Cardiología',
+                'Pediatría',
+                'Dermatología',
+                'Neurología',
+                'Ginecología',
+                'Oftalmología',
+                'Traumatología',
+                'Psiquiatría',
+                'Medicina General',
+                'Endocrinología'
+            ]),
+            'description' => fake()->sentence(),
+            'active' => true,
+        ];
+    }
+
+    /**
+     * Indicate that the specialty is inactive.
+     */
+    public function inactive(): static
+    {
+        return $this->state(fn(array $attributes) => [
+            'active' => false,
+        ]);
+    }
+
+    /**
+     * Indicate that the specialty is active.
+     */
+    public function active(): static
+    {
+        return $this->state(fn(array $attributes) => [
+            'active' => true,
+        ]);
+    }
+}
