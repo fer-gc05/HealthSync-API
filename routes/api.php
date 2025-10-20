@@ -107,6 +107,8 @@ Route::middleware(['auth:api', 'role:admin'])->prefix('admin')->group(function (
 
     // Especialidades - Admin
     Route::apiResource('specialties', SpecialtyController::class);
+    Route::post('specialties/{id}/restore', [SpecialtyController::class, 'restore'])->whereNumber('id');
+    Route::delete('specialties/{id}/force', [SpecialtyController::class, 'forceDestroy'])->whereNumber('id');
 });
 
 // Rutas para pacientes - registros médicos (deben ir primero para evitar conflictos)
