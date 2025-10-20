@@ -27,22 +27,23 @@ class SpecialtyController extends Controller
      * - Usuarios públicos: Solo especialidades activas y no eliminadas
      * - Administradores: Pueden filtrar por estado (activas/inactivas) e incluir/filtrar eliminadas
      *
+     *
+     *  Parámetros disponibles:
+     *  - q: Término de búsqueda (busca en name y description)
+     *  - sort_by: Campo para ordenar (name, created_at, updated_at) - default: created_at
+     *  - sort_dir: Dirección del ordenamiento (asc, desc) - default: desc
+     *  - per_page: Cantidad de resultados por página (1-100) - default: 10
+     *  - page: Número de página actual
+     *
+     *  Filtros exclusivos para admin:
+     *  - active: Filtrar por especialidades activas (1) o inactivas (0)
+     *  - with_trashed: Incluir especialidades eliminadas en los resultados (true=1 - false=0)
+     *  - only_trashed: Mostrar solo especialidades eliminadas (true=1 - false=0)
+     *
      * @param Request $request Parámetros de filtrado, búsqueda y paginación
      * @return JsonResponse Lista paginada de especialidades o error
      *
      * @response array{success: bool, data: Specialty[],current_page: int, last_page: int, per_page: int, total: int,next_page_url: string|null, prev_page_url: string|null,path: string, from: int|null, to: int|null,...}
-     *
-     * Parámetros disponibles:
-     * - q: Término de búsqueda (busca en name y description)
-     * - sort_by: Campo para ordenar (name, created_at, updated_at) - default: created_at
-     * - sort_dir: Dirección del ordenamiento (asc, desc) - default: desc
-     * - per_page: Cantidad de resultados por página (1-100) - default: 15
-     * - page: Número de página actual
-     *
-     * Filtros exclusivos para admin:
-     * - active: Filtrar por especialidades activas (true) o inactivas (false)
-     * - with_trashed: Incluir especialidades eliminadas en los resultados (true/false)
-     * - only_trashed: Mostrar solo especialidades eliminadas (true/false)
      */
     public function index(IndexSpecialtyRequest $request): JsonResponse
     {
@@ -62,13 +63,16 @@ class SpecialtyController extends Controller
             if (auth()->check() && auth()->user()->hasRole('admin')) {
                 // Filtro por estado activo/inactivo
                 if ($request->has('active')) {
-                    $query->where('active', $request->boolean('active'));
+                    $query->where('active', filter_var($request->input('active'), FILTER_VALIDATE_BOOLEAN));
                 }
 
                 // Filtros de registros eliminados
-                if ($request->boolean('only_trashed')) {
+                $onlyTrashed = filter_var($request->input('only_trashed'), FILTER_VALIDATE_BOOLEAN);
+                $withTrashed = filter_var($request->input('with_trashed'), FILTER_VALIDATE_BOOLEAN);
+
+                if ($onlyTrashed) {
                     $query->onlyTrashed();
-                } elseif ($request->boolean('with_trashed')) {
+                } elseif ($withTrashed) {
                     $query->withTrashed();
                 }
             } else {
@@ -80,13 +84,11 @@ class SpecialtyController extends Controller
             $sortBy = $request->input('sort_by', 'created_at');
             $sortDir = $request->input('sort_dir', 'desc');
 
-            // Validar campos permitidos para ordenamiento
             $allowedSortFields = ['name', 'created_at', 'updated_at'];
             if (!in_array($sortBy, $allowedSortFields)) {
                 $sortBy = 'created_at';
             }
 
-            // Validar dirección de ordenamiento
             $sortDir = strtolower($sortDir) === 'asc' ? 'asc' : 'desc';
 
             $query->orderBy($sortBy, $sortDir);
