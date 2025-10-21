@@ -341,6 +341,24 @@ Archivo `routes/web.php` expone metadata y enlaces útiles:
 1. **Registro público**: Campo `role` obligatorio ("patient" o "doctor")
 2. **Gestión admin**: Endpoint `PUT /api/admin/users/{user}/role`
 
+## ✅ Validaciones de Seguridad
+
+### **Registro de Usuario**
+- **Email**: Obligatorio, formato válido, único en la base de datos
+- **Password**:
+    - Mínimo 8 caracteres, máximo 64 caracteres
+    - Al menos una letra minúscula
+    - Al menos una letra mayúscula
+    - Al menos un número
+    - Confirmación requerida (`password_confirmation`)
+- **Name**: Obligatorio, máximo 255 caracteres
+
+### **Login**
+- **Email**: Obligatorio, formato válido
+- **Password**: Obligatorio
+
+> **Nota:** Las reglas de complejidad de contraseña solo aplican durante el registro. En el login se validan las credenciales contra la base de datos.
+
 ## 🗑️ Soft Deletes
 
 El sistema implementa soft deletes para mantener la integridad de datos:
